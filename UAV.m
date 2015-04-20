@@ -39,12 +39,26 @@ classdef UAV < handle
         end
         %function update velocity, only specific, add warning status
         function InputDVel_1(UAVC,DVEL,Warn) %Only for 2D
-            UAVC.InputDV = [DVEL; 0];
+            UAVC.InputDV = DVEL;
             %read the warnings
             UAVC.TrWarn = Warn;
         end
         %function state after 1 time step, only specific
         function MoveTimeD_1(UAVC,TiSt)
+            
+            NewVel = UAVC.BodVel + UAVC.InputDV(1:3);
+            UAVC.WinAtt = [0;0;0];
+            %DDd = UAVC.GloAtti 
+            DelRot = atan2(NewVel(2),NewVel(1));
+            UAVC.GloAtt = UAVC.GloAtt + [0; 0; DelRot];
+            MatDelRot = [cos(DelRot) -sin(DelRot); 
+                         sin(DelRot)  cos(DelRot)];
+            UAVC.GloVel = [MatDelRot*UAVC.GloVel(1:2); 0];
+            UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
+
+            
+        end
+        function MoveTimeD_3(UAVC,TiSt)%A threeD movement, but linear
             
             NewVel = UAVC.BodVel + UAVC.InputDV(1:3);
             UAVC.WinAtt = [0;0;0];
@@ -74,4 +88,18 @@ classdef UAV < handle
     end
     
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

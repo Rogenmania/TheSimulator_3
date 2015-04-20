@@ -1,3 +1,4 @@
+
 load('Record.mat')
 
 %simplifying the names ===================================================
@@ -11,7 +12,7 @@ for ii = 1:AgentNumber
         end
     end
 end
-VTP_g(2,:,1)*57.3
+VTP_g(2,:,1)
 UVW_g(:,:,1)
 XYZ_g(2,:,1)
 
@@ -27,23 +28,37 @@ ZVO = sin(pi/2)*Xunit2*HeadConeBase+cos(pi/2)*(Zunit2-1)*HeadConeLength;
 
 figure(10) %just to make sure..
 hold on; grid on; axis equal;
-set(gca,'ZDir','reverse')
+set(gca,'ZDir','reverse','CameraPosition',[-22 -66 -30],'CameraViewAngle',9)
+
 ColSet = ['b'; 'r'; 'g'; 'm']; 
 for tii = 1:AgentNumber
-    UVW_g(1,tii)
     vAge(tii) = surf(XAge+XYZ_g(tii,1,1), YAge+XYZ_g(tii,2,1), ZAge+XYZ_g(tii,3,1),...  %the XYZ_g is just for initial
-                'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5);
+                'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5); %making agent sphere
+    
     RotMatP = [cos(VTP_g(tii,1,1)) sin(VTP_g(tii,1,1)) 0; -sin(VTP_g(tii,1,1)) cos(VTP_g(tii,1,1)) 0 ; 0 0 1]; %3D turning to heading
     RotMatT = [cos(VTP_g(tii,2,1)) 0 -sin(VTP_g(tii,2,1)); 0 1 0; sin(VTP_g(tii,2,1)) 0 cos(VTP_g(tii,2,1))];
     RotMatV = [1 0 0; 0 cos(VTP_g(tii,2,1)) sin(VTP_g(tii,2,1)); 0 -sin(VTP_g(tii,2,1)) cos(VTP_g(tii,2,1))];
-    RotMat3D = RotMatP*RotMatT*RotMatV;
+    RotMat3D = RotMatV*RotMatT*RotMatP;
     %rotate the heading
     XVO1 = XVO*RotMat3D(1,1)+YVO*RotMat3D(1,2)+ZVO*RotMat3D(1,3);
     YVO1 = XVO*RotMat3D(2,1)+YVO*RotMat3D(2,2)+ZVO*RotMat3D(2,3);
     ZVO1 = XVO*RotMat3D(3,1)+YVO*RotMat3D(3,2)+ZVO*RotMat3D(3,3);
-    vAgeHead(tii)=surf(XVO1+XYZ_g(tii,1,1), YVO1+XYZ_g(tii,2,1), ZVO1+XYZ_g(tii,3,1),...
+    vAgeHead(tii)=surf(XVO1+XYZ_g(tii,1,1), YVO1+XYZ_g(tii,2,1), ZVO1+XYZ_g(tii,3,1),... %making heading indicator
                  'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 end
+
+
+%run it for sim time
+for sii = 1:length(RecUVW_g(1).Data)-1
+    for tii = 1:AgentNumber
+        set(vAge(tii),'XData',XAge+XYZ_g(tii,1,sii), ...
+                      'YData',YAge+XYZ_g(tii,2,sii), ...
+                      'ZData',ZAge+XYZ_g(tii,3,sii));
+        pause(0.2)
+    end
+end
+
+
 
 dfbd
 RotMatVO = [cos(pi/2) 0 -sin(pi/2); 0 1 0; sin(pi/2) 0 cos(pi/2)];

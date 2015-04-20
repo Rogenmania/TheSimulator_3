@@ -9,7 +9,7 @@ clear all; clc; close all;
 %%
 %Making the world.... making the object==================================
 AgentNumber = 2;
-tSimTiR = 3; %Recording Alocation
+tSimTiR = 5; %Recording Alocation
 tTiStR = 0.1; %Recording Save
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
@@ -93,8 +93,8 @@ ObsPos = [Dist; 0; 0];
 %frame of reference
 %rotation matrix to make all of them on ownship body axis...
 R2Bod0 = [cos(VooAzz)*cos(VooElv) sin(VooAzz) cos(VooAzz)*sin(VooElv);
-               -sin(VooAzz)*cos(VooElv) cos(VooAzz) -sin(VooAzz)*sin(VooElv);
-               -sin(VooElv) 0 cos(VooElv)]
+         -sin(VooAzz)*cos(VooElv) cos(VooAzz) -sin(VooAzz)*sin(VooElv);
+         -sin(VooElv) 0 cos(VooElv)];
 VooB =  R2Bod0*Voo;
 UVWo = VooB;
 VTPo = [0; 0; 0];
@@ -106,6 +106,7 @@ VioB = R2Bod0*Vio;
 UVWi = VioB;
 VTPi = [0; acos(VioB(3)/(VioA)); atan2(VioB(2),VioB(1))];
 VTP_g(:,2) = VTPi;%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Aa1 = VTP_g(:,2);
 RelVelB = R2Bod0*RelVel;
 
 %The end of the road
@@ -115,7 +116,7 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;%++++++++++++++++++++++++++++++++++++++++++++++++
 
 %%
 %if you want scenario visualization======================================
-%InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
+InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
 
 %%
@@ -188,22 +189,24 @@ while ElaTi < TimeEnd
     for ii = 1:AgentNumber
         %if there are collision, stop immediately?
         RecXYZ_g(ii).AddRecord(Agent(ii).GloPos)
+        
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
-        if CAS(ii).CASFlag(1) == 3
-            %LastPoint = CAS(ii).ObDist(jj)
-            dde = 1;
-            gugu = ii;
-            %ElaTi
-            break
+        if ii == 2
+            Aa2 = Agent(ii).GloAtt;
+            Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_1(RecGloPos(1).TimeStep)
+        Agent(ii).MoveTimeD_1(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;
 end
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g AgentNumber Rsep
+Aa1
+Aa2
+Bb2
+
 clear all;
 %=====================================================================
 %%

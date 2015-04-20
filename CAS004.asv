@@ -371,9 +371,8 @@ classdef CAS004< Computer
             %actually, thinking of avoidance plane, should be the angle -->
             %roll, then heading... and the heading is determined? while the
             %avoplane is not. but, if we using closed loop, than should be
-            %heaing angle afetr roll. nad not speed? or speed constant.
-            %Controller on Speed, Roll, and Heading?
-            MAC.Decision = [MAC.DMaVel; 0; 0; ... %because it is body axis...
+            %heaing angle afetr roll.
+            MAC.Decision = [-MAC.DMaVel*(sin(MAC.AvoW))^2; MAC.DMaVel*sin(MAC.AvoW)*cos(MAC.AvoW); 0; ...
                             0;0;0];
         end
         function ReadGCS(MAC,TGoVel)
