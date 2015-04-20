@@ -76,24 +76,15 @@ classdef GCS001 < Computer
 
             %Distance from initial/setup flight path
             MAC.DriftAvo = MAC.Point2Vect(MAC.FliPath,MAC.PosGlo,3); %the result is global!
-            
             %Velocity directly to goal (EndWP/ End of Path? / special
             %algorithm for drift nullification?
             ToGoal = MAC.FliPath(:,2)-MAC.PosGlo; %  but it isstill global orientation
             ToPath = [MAC.DriftAvo(2); MAC.DriftAvo(3); MAC.DriftAvo(4)]-MAC.PosGlo; %  but it isstill global orientation
             DistToGoal = (sum((ToGoal).^2))^0.5;
-            if DistToGoal ==0
-                ToGoal = [0;0;0];
-            else
-                ToGoal = ToGoal/((sum((ToGoal).^2))^0.5); %Normalized, just direction
-            end
-            if MAC.DriftAvo(1) == 0
-                ToPath=ToPath;
-            else
-                ToPath = ToPath/(MAC.DriftAvo(1)); %Normalized, just direction
-            end
+                        
             %The TGoVel need to head to goal when it is on the path, but to go as soon to the pat when it is not on the path.
-            MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(ToGoal+ToPath)); %this should work
+            Fact = 0.01; %meaning point 100 meters ahead?
+            MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(Fact*ToGoal+ToPath)); %this should work
             %if the change of vel is only velocity based, then we are
             %finish. if it need to be angle and avoidan plane...
             %TheAvoplane is the palne that consisted current Vel vector and
@@ -104,30 +95,42 @@ classdef GCS001 < Computer
             NAvoPlTGoVel = cross(MAC.TGoVel,[1 0 0]); %--> already in body axis, the nromal also in body,
             %above does not work when its the same. on Y and Z.
             %the Z axis --? [0 0 1]; so the dihedral
-            AVoPl = acos((dot(NAvoPlTGoVel,[1/(2)^0.5 0 1/(2)^0.5]))/((sum((NAvoPlTGoVel).^2))^0.5)); %remember unit vector
+            NorLeng = sum((NAvoPlTGoVel).^2)^0.5;
+            if NorLeng == 0
+                AVoPl = 0; %dont move... actualy, any plane will do, but we just keep it as dont move
+            else
+                AVoPl = acos((dot(NAvoPlTGoVel,[0 0 1]))/((sum((NAvoPlTGoVel).^2))^0.5)); %remember unit vector
+                %since there are no pos/neg, use the sign of the Y in
+                %TGOVel
+                AVoPl = sign(NAvoPlTGoVel(2))*AVoPl;
+            end
             %the heading? if.. pitch or head? --> at 45 degree?
             if AVoPl > pi/2 %just to limit
                 AVoPl = AVoPl-pi;
+ 
             elseif AVoPl < -pi/2
                 AVoPl = AVoPl+pi;
             end
-            Aa = NAvoPlTGoVel
-            Bb = AVoPl
-            Cc = dot(NAvoPlTGoVel,[1/(2)^0.5 0 1/(2)^0.5])
             
             if AVoPl >= -pi/4 && AVoPl <= pi/4 %
                 %then go change heading
                 RollCom = AVoPl;
                 PitchCom = 0; %Current Pitch
                 %only need the X and Y of TGOvel
-                YawCom = acos(dot([MAC.TGoVel(1) 0 MAC.TGoVel(3)],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
-                         ((MAC.TGoVel(1)^2+MAC.TGoVel(3)^2)^0.5*(MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
+                YawCom = acos(dot([1 0 0],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
+                         ((MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
+                %since there are no pos/neg, use the sign of the Y in
+                %TGOVel
+                YawCom = -sign(MAC.TGoVel(2))*YawCom;
             else
                 RollCom = AVoPl-pi/2;
                 %go change pitch
                 YawCom = 0; %current Yaw
-                PitchCom = acos(dot([0 MAC.TGoVel(2) MAC.TGoVel(3)],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
-                           ((MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5*(MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
+                PitchCom = acos(dot([1 0 0],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
+                           ((MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
+                %since there are no pos/neg, use the sign of the Z in
+                %TGOVel
+                PitchCom = sign(MAC.TGoVel(3))*PitchCom;
             end
             
             if RollCom > pi/2  %just to limit
@@ -135,13 +138,16 @@ classdef GCS001 < Computer
             elseif RollCom < -pi/2
                 RollCom = RollCom+pi;
             end
+            Rol =RollCom*57.3
+            Pit =PitchCom*57.3
+            Yaw =YawCom*57.3
             
             MAC.Decision(:,1) = [MAC.TGoVel-MAC.VelBo; ...
                                  RollCom; PitchCom; YawCom];
                              
                              
             
-            sdgsdev
+            
             %MAC.Decision(:,1) = [0;0;0; 0;0;0];
         end
         

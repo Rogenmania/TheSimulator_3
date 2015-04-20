@@ -81,7 +81,7 @@ RelVel = [RelVelA*sin(pi/2-RelVElv)*cos(RelVAzz);
           RelVelA*cos(pi/2-RelVElv)]; %the equation is for inclination, hence the pi/2 -
 
 %which then make the Obstacle velocity:
-Vio = Voo-RelVel
+Vio = Voo-RelVel;
 VioA = (sum(Vio.^2))^0.5;
 UVW_b(:,2) = [VioA;0;0];%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -136,7 +136,7 @@ for tii = 1:AgentNumber
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-
+Agent(1).SetInit([0;10;11],[2;0;0],VTP_g(:,1))
 %========================================================================
 
 %%
