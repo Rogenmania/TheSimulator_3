@@ -110,13 +110,13 @@ Aa1 = VTP_g(:,2);
 RelVelB = R2Bod0*RelVel;
 
 %The end of the road
-Tifin = 1000; %until it stop. Does not matter
+Tifin = 10; %until it stop. Does not matter
 XYZfin_g = XYZ_g + UVW_g*Tifin;%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %=========================================================================
 
 %%
 %if you want scenario visualization======================================
-InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
+%InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
 
 %%
@@ -132,12 +132,15 @@ for tii = 1:AgentNumber
     CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],0,0);
     
     RecXYZ_g(tii).AddRecord(Agent(tii).GloPos)
+    RecXYZ_g(tii).AddRecord2(XYZfin_g(:,tii))
     RecUVW_g(tii).AddRecord(Agent(tii).GloVel)
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-Agent(1).SetInit([0;10;11],[2;0;0],VTP_g(:,1))
+%Agent(1).SetInit([0;10;11],[2;0;0],VTP_g(:,1))
 %========================================================================
+
+%save InitCond
 
 %%
 %Now move it - move it. 
@@ -177,11 +180,12 @@ while ElaTi < TimeEnd
         GCS(ii).GCSRun()                                                   %GCS Computer analyzing and deciding
         CAS(ii).ReadGCS(GCS(ii).TGoVel)                                    %CAS Computer read data from GCS and set info for GCS
         CAS(ii).ACASRun()                                                  %CAS Computer analyzing and deciding
-        GCS(ii).ReadCAS(CAS(ii).CASFlag,CAS(ii).Decision,CAS(ii).Interupt) %GCS Computer read data and interupt from CAS
+        
+        %GCS(ii).ReadCAS(CAS(ii).CASFlag,CAS(ii).Decision,CAS(ii).Interupt) %GCS Computer read data and interupt from CAS
 
         %Put Input on UAV
         %Agent(ii).InputDVel_1(Desicion, Warning)
-        Agent(ii).InputDVel_1(GCS(ii).Decision,GCS(ii).CASFlag)
+        Agent(ii).InputD(GCS(ii).Decision,GCS(ii).CASFlag)
  
     end
     
@@ -196,7 +200,7 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_1(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;

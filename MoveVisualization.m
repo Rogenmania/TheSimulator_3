@@ -11,6 +11,7 @@ for ii = 1:AgentNumber
             VTP_g(ii,kk,jj) = RecVTP_g(ii).Data(kk,jj);
         end
     end
+    XYZ_goal(:,ii) = RecXYZ_g(ii).Data2(:,1);
 end
 VTP_g(2,:,1)
 UVW_g(:,:,1)
@@ -34,7 +35,7 @@ ColSet = ['b'; 'r'; 'g'; 'm'];
 for tii = 1:AgentNumber
     vAge(tii) = surf(XAge+XYZ_g(tii,1,1), YAge+XYZ_g(tii,2,1), ZAge+XYZ_g(tii,3,1),...  %the XYZ_g is just for initial
                 'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5); %making agent sphere
-    
+    hold on;
     RotMatP = [cos(VTP_g(tii,1,1)) sin(VTP_g(tii,1,1)) 0; -sin(VTP_g(tii,1,1)) cos(VTP_g(tii,1,1)) 0 ; 0 0 1]; %3D turning to heading
     RotMatT = [cos(VTP_g(tii,2,1)) 0 -sin(VTP_g(tii,2,1)); 0 1 0; sin(VTP_g(tii,2,1)) 0 cos(VTP_g(tii,2,1))];
     RotMatV = [1 0 0; 0 cos(VTP_g(tii,2,1)) sin(VTP_g(tii,2,1)); 0 -sin(VTP_g(tii,2,1)) cos(VTP_g(tii,2,1))];
@@ -45,6 +46,10 @@ for tii = 1:AgentNumber
     ZVO1 = XVO*RotMat3D(3,1)+YVO*RotMat3D(3,2)+ZVO*RotMat3D(3,3);
     vAgeHead(tii)=surf(XVO1+XYZ_g(tii,1,1), YVO1+XYZ_g(tii,2,1), ZVO1+XYZ_g(tii,3,1),... %making heading indicator
                  'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
+             
+    InitDir(tii) = line([XYZ_g(tii,1,1) XYZ_goal(1,tii)],...
+                        [XYZ_g(tii,2,1) XYZ_goal(2,tii)],...
+                        [XYZ_g(tii,3,1) XYZ_goal(3,tii)]);
 end
 
 
