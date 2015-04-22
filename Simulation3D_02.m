@@ -82,7 +82,7 @@ RelVel = [RelVelA*sin(pi/2-RelVElv)*cos(RelVAzz);
 
 %which then make the Obstacle velocity:
 Vio = Voo-RelVel;
-VioA = (sum(Vio.^2))^0.5;
+VioA = (sum(Vio.^2))^0.5
 UVW_b(:,2) = [VioA;0;0];%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 % Plot it first?
@@ -92,19 +92,23 @@ ObsPos = [Dist; 0; 0];
 %above s just the setup --> testing the cases which difficult to be determined in the bofy frame of reference . The visualization should always be on the ownshp
 %frame of reference
 %rotation matrix to make all of them on ownship body axis...
-R2Bod0 = [cos(VooAzz)*cos(VooElv) sin(VooAzz) cos(VooAzz)*sin(VooElv);
-         -sin(VooAzz)*cos(VooElv) cos(VooAzz) -sin(VooAzz)*sin(VooElv);
-         -sin(VooElv) 0 cos(VooElv)];
+RotMatP = [cos(-VooAzz) sin(-VooAzz) 0; -sin(-VooAzz) cos(-VooAzz) 0 ; 0 0 1]; %3D turning to heading
+RotMatT = [cos(-VooElv) 0 -sin(-VooElv); 0 1 0; sin(-VooElv) 0 cos(-VooElv)];
+RotMatV = [1 0 0; 0 cos(0) sin(0); 0 -sin(0) cos(0)];
+MatB2E = RotMatP*RotMatT*RotMatV; %reversed angles!
+R2Bod0 = MatB2E;
 VooB =  R2Bod0*Voo;
 UVWo = VooB;
 VTPo = [0; 0; 0];
 ObsPosB = R2Bod0*ObsPos;
+
 XYZ_g(:,2) = ObsPosB;%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 VoiG = R2Bod0*Vio;
 UVW_g(:,2) = VoiG;
 VioB = R2Bod0*Vio;
 UVWi = VioB;
-VTPi = [0; acos(VioB(3)/(VioA)); atan2(VioB(2),VioB(1))];
+%VTPi = [0; acos(VioB(3)/(VioA)); atan2(VioB(2),VioB(1))];
+VTPi = [0; -atan2(VioB(3),((VioB(2)^2+VioB(1)^2)^0.5)); atan2(VioB(2),VioB(1))];
 VTP_g(:,2) = VTPi;%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Aa1 = VTP_g(:,2);
 RelVelB = R2Bod0*RelVel;
@@ -114,6 +118,19 @@ Tifin = 10; %until it stop. Does not matter
 XYZfin_g = XYZ_g + UVW_g*Tifin;%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %=========================================================================
 
+%% Dumd Scenario
+XYZ_g = [0 10+10/(3^0.5); 
+         0 10/(3^0.5);
+         0 -10/(3^0.5)];
+UVW_g = [2 -2/(3^0.5);
+         0 -2/(3^0.5);
+         0 2/(3^0.5)];
+UVW_b = [2 2; 0 0; 0 0];
+VTP_g = [0 0;
+         0 54.7330-90;
+         0 90-45]/180*pi;
+VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
+XYZfin_g = XYZ_g + UVW_g*Tifin;
 %%
 %if you want scenario visualization======================================
 %InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
@@ -137,7 +154,7 @@ for tii = 1:AgentNumber
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-%Agent(1).SetInit([0;10;11],[2;0;0],VTP_g(:,1))
+Agent(1).SetInit([0;0;2],[2;0;0],VTP_g(:,1))
 %========================================================================
 
 %save InitCond
@@ -156,7 +173,7 @@ while ElaTi < TimeEnd
         disp([num2str(ElaTi) '  hitungan agent ' num2str(ii) '============'])
         %Sensor Sensing...
         VelSens(ii).Sense(Agent(ii).BodVel)
-        AttSens(ii).Sense(Agent(ii).WinAtt)
+        AttSens(ii).Sense(Agent(ii).GloAtt)
         GPSP(ii).Sense(Agent(ii).GloPos)
         GPSV(ii).Sense(Agent(ii).GloVel)
         ProxSensP(ii).Clear()
@@ -200,16 +217,13 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3V(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;
 end
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g AgentNumber Rsep
-Aa1
-Aa2
-Bb2
 
 clear all;
 %=====================================================================

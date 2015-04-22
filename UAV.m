@@ -32,14 +32,15 @@ classdef UAV < handle
             UAVC.GloPos = iGPOS;         %Global Position
             UAVC.GloAtti = iGATT;
             UAVC.GloAtt = iGATT;
-            MatB2E = [cos(UAVC.GloAtt(3)) -sin(UAVC.GloAtt(3)) 0; 
-                      sin(UAVC.GloAtt(3))  cos(UAVC.GloAtt(3)) 0;
-                      0                    0                   1];
+            RotMatP = [cos(iGATT(3)) sin(iGATT(3)) 0; -sin(iGATT(3)) cos(iGATT(3)) 0 ; 0 0 1]; %3D turning to heading
+            RotMatT = [cos(iGATT(2)) 0 -sin(iGATT(2)); 0 1 0; sin(iGATT(2)) 0 cos(iGATT(2))];
+            RotMatV = [1 0 0; 0 cos(iGATT(1)) sin(iGATT(1)); 0 -sin(iGATT(1)) cos(iGATT(1))];
+            MatB2E = RotMatV*RotMatT*RotMatP;
             UAVC.GloVel = MatB2E*iBVEL;
             UAVC.BodVel = iBVEL;
         end
         %function update velocity, only specific, add warning status
-        function InputD(UAVC,DVEL,Warn) %Only for 2D
+        function InputD(UAVC,DVEL,Warn) 
             UAVC.InputDV = DVEL(1:3);
             UAVC.InputDA = DVEL(4:6);
             %read the warnings
@@ -65,9 +66,9 @@ classdef UAV < handle
             GRol = 1; %maybe this need to be big. or should it be instanteneous? 
             GPit = 1;
             GYaw = 1;
-            RolRate = 30/180*pi; %deg/sec
-            PitRate = 30/180*pi;
-            YawRate = 30/180*pi;
+            RolRate = 1;%30/180*pi; %deg/sec
+            PitRate = 1;%30/180*pi;
+            YawRate = 1;%30/180*pi;
             RolTi = UAVC.InputDA(1)*GRol*RolRate*TiSt;
             PitTi = UAVC.InputDA(2)*GPit*PitRate*TiSt; 
             YawTi = UAVC.InputDA(3)*GYaw*YawRate*TiSt; 
@@ -87,13 +88,37 @@ classdef UAV < handle
             
             
         end
-        
+        function MoveTimeD_3V(UAVC,TiSt)%A threeD movement, but linear
+            %first roll?
+
+            RolTi = UAVC.InputDA(1);
+            PitTi = UAVC.InputDA(2); 
+            YawTi = UAVC.InputDA(3); 
+            
+            
+            UuTi = UAVC.InputDV(1);
+            VvTi = UAVC.InputDV(2);
+            WwTi = UAVC.InputDV(3);
+            
+            UAVC.GloVel= UAVC.GloVel+[UuTi; VvTi; WwTi];
+            UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
+            %UAVC.GloAtt = UAVC.GloAtt + [RolTi; PitTi; YawTi];
+            
+            %reach or put these input to zero by turning? So InoputDA -
+            %will control the turn in three axis, but how abot trolling
+            %first?
+            
+            %[T,NEPo]=ode45(@(t,y) NavEq(t,UVWo,VTPo),TiStCh,NEPo);
+            
+            
+        end
         function SetInit(UAVC,iGPOS,iBVEL,iGATT)
             UAVC.GloPos = iGPOS;         %Global Position
             UAVC.GloAtt = iGATT;
-            MatB2E = [cos(UAVC.GloAtt(3)) -sin(UAVC.GloAtt(3)) 0; 
-                      sin(UAVC.GloAtt(3))  cos(UAVC.GloAtt(3)) 0;
-                      0                    0                   1];
+            RotMatP = [cos(-iGATT(3)) sin(-iGATT(3)) 0; -sin(-iGATT(3)) cos(-iGATT(3)) 0 ; 0 0 1]; %3D turning to heading
+            RotMatT = [cos(-iGATT(2)) 0 -sin(-iGATT(2)); 0 1 0; sin(-iGATT(2)) 0 cos(-iGATT(2))];
+            RotMatV = [1 0 0; 0 cos(-iGATT(1)) sin(-iGATT(1)); 0 -sin(-iGATT(1)) cos(-iGATT(1))];
+            MatB2E = RotMatP*RotMatT*RotMatV;
             UAVC.GloVel = MatB2E*iBVEL;
             UAVC.BodVel = iBVEL;
         end

@@ -79,12 +79,21 @@ classdef GCS001 < Computer
             %Velocity directly to goal (EndWP/ End of Path? / special
             %algorithm for drift nullification?
             ToGoal = MAC.FliPath(:,2)-MAC.PosGlo; %  but it isstill global orientation
-            ToPath = [MAC.DriftAvo(2); MAC.DriftAvo(3); MAC.DriftAvo(4)]-MAC.PosGlo; %  but it isstill global orientation
+            ToPath = [MAC.DriftAvo(2); MAC.DriftAvo(3); MAC.DriftAvo(4)]-MAC.PosGlo %  but it isstill global orientation
             DistToGoal = (sum((ToGoal).^2))^0.5;
                         
             %The TGoVel need to head to goal when it is on the path, but to go as soon to the pat when it is not on the path.
             Fact = 0.01; %meaning point 100 meters ahead?
-            MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(Fact*ToGoal+ToPath)); %this should work
+            %MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(Fact*ToGoal+ToPath)); %this should work
+            if MAC.DriftAvo(1) < 0.0001
+               PathFact = [0;0;0];
+            else
+               PathFact = ToPath/MAC.DriftAvo(1)
+               MAC.DriftAvo(1)
+               %eretg
+            end
+            MAC.TGoVel = MAC.DMaVel*(ToGoal+ToPath)/(DistToGoal*MAC.DriftAvo(1));
+            %MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(ToPath));
             %if the change of vel is only velocity based, then we are
             %finish. if it need to be angle and avoidan plane...
             %TheAvoplane is the palne that consisted current Vel vector and
@@ -138,16 +147,16 @@ classdef GCS001 < Computer
             elseif RollCom < -pi/2
                 RollCom = RollCom+pi;
             end
-            Rol =RollCom*57.3
-            Pit =PitchCom*57.3
-            Yaw =YawCom*57.3
+            Rol =RollCom*57.3;
+            Pit =PitchCom*57.3;
+            Yaw =YawCom*57.3;
             
-            MAC.Decision(:,1) = [MAC.TGoVel-MAC.VelBo; ...
+            MAC.Decision(:,1) = [MAC.TGoVel-MAC.VelGlo; ...
                                  RollCom; PitchCom; YawCom];
-                             
-                             
-            
-            
+            Aaa = MAC.Decision.*[1;1;1;57.3;57.3;57.3];
+            Ro = csvread('DecRec.txt');
+            csvwrite('DecRec.txt',[Ro ; Aaa'])
+
             %MAC.Decision(:,1) = [0;0;0; 0;0;0];
         end
         

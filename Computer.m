@@ -47,7 +47,7 @@ classdef Computer < handle
             MAC.DMaVel = (sum(DBoVel.^2))^0.5;
             MAC.TGoVel = DBoVel;
             MAC.FliPath  = FliPath;
-            MAC.HeaGlo = Heading(3);
+            MAC.HeaGlo = Heading;
             
                
         end
@@ -67,16 +67,19 @@ classdef Computer < handle
        
         end
         function CalcSensor(MAC)
-            %Calculate Heading 2D, form ObVelGlo ?
-            MAC.HeaGlo = atan2(MAC.VelGlo(2),MAC.VelGlo(1));
+            %Calculate Heading 3D, from ObVelGlo ?
             
-            %Global to Body Rotational Matrix (3D with neglected  Z)
-            MAC.MatE2B = MAC.RotMat(-MAC.HeaGlo,31); 
+            MAC.HeaGlo = MAC.Vect2Angls(MAC.VelGlo);
+            
+            %Global to Body Rotational Matrix 
+            %earth to Body, just turn backwards... 
+            %we need this for the obstacles. or other vector like ToGoal
+            MAC.MatE2B = MAC.RotMat(MAC.HeaGlo,3); 
             %Path to Body 
             
             %Path to Global
-            MAC.FliPathAng = (atan2((MAC.FliPath(2,2)-MAC.FliPath(2,1)),(MAC.FliPath(1,2)-MAC.FliPath(1,1))));
-            MAC.MatP2E = MAC.RotMat(MAC.FliPathAng,31);
+            MAC.FliPathAng = MAC.Vect2Angls(MAC.FliPath(:,2)-MAC.FliPath(:,1));
+            MAC.MatP2E = MAC.RotMat(MAC.FliPathAng,3);
 
         end
         
@@ -298,6 +301,11 @@ classdef Computer < handle
                     RoMa = [cos(AngleNya) -sin(AngleNya); sin(AngleNya) cos(AngleNya)];
                 case 31
                     RoMa = [cos(AngleNya) -sin(AngleNya) 0; sin(AngleNya) cos(AngleNya) 0; 0 0 1];
+                case 3 %true 3 dimenstional rotational matrix - fdrom Stevens and Lewis
+                    RolTi = AngleNya(1); PitTi = AngleNya(2); YawTi = AngleNya(3);
+                    RoMa = [cos(PitTi)*cos(YawTi) cos(PitTi)*sin(YawTi) -sin(PitTi);
+                           -cos(RolTi)*sin(YawTi)+sin(RolTi)*sin(PitTi)*cos(YawTi) cos(RolTi)*cos(YawTi)+sin(RolTi)*sin(PitTi)*sin(YawTi) sin(RolTi)*cos(PitTi);
+                            sin(RolTi)*sin(YawTi)+cos(RolTi)*sin(PitTi)*cos(YawTi) -sin(RolTi)*cos(YawTi)+cos(RolTi)*sin(PitTi)*sin(YawTi) cos(RolTi)*cos(PitTi)];
                 otherwise
                     RoMa = [cos(AngleNya) -sin(AngleNya); sin(AngleNya) cos(AngleNya)];
             end
@@ -341,6 +349,11 @@ classdef Computer < handle
             end
             
         end
+        function Angl = Vect2Angls(Vect)
+            %without-roll!
+            Angl = [0; -atan2(Vect(3),((Vect(2)^2+Vect(1)^2)^0.5)); atan2(Vect(2),Vect(1))];
+        end
+            
     end
     
 end

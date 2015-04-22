@@ -214,9 +214,9 @@ classdef CAS004< Computer
                     MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,1);
                 end
                 
-                OutD1 = MAC.ObVelAbs
-                OutD1 = MAC.ObsCats
-                OutD2 = MAC.SepRad
+                OutD1 = MAC.ObVelAbs;
+                OutD1 = MAC.ObsCats;
+                OutD2 = MAC.SepRad;
                 if MAC.ObDist(ii) < MAC.CASDistDat(3,MAC.Cate,MAC.ObsCats(ii))
                     MAC.CASFlag(ii+1) = 3;  %inside escape sphere
                 elseif MAC.ObDist(ii) < (MAC.CASDistDat(2,MAC.Cate,MAC.ObsCats(ii))*MAC.AvoTy); %the MAC.AvoTy is a choice
@@ -237,7 +237,7 @@ classdef CAS004< Computer
         function WarningSys(MAC)
         %function send nessesary Warning
         %if CASFlag 1-2-3
-        OutD3 = MAC.CASFlag
+        OutD3 = MAC.CASFlag;
         
         if MAC.CASFlag ~= 0
             %warn according to CASFlag

@@ -21,7 +21,7 @@ XYZ_g(2,:,1)
 XAge = Xunit*Rsep*0.5; YAge = Yunit*Rsep*0.5; ZAge = Zunit*Rsep*0.5; %0.5 for half radius
 [Xunit2,Yunit2,Zunit2] = cylinder(0:1); %use this for heading
 RotMatVO = [cos(pi/2) 0 -sin(pi/2); 0 1 0; sin(pi/2) 0 cos(pi/2)]; % too turn it on the VTP right direction first
-HeadConeLength = 1.5*Rsep*0.5; %little outside
+HeadConeLength = 2*Rsep*0.5; %little outside
 HeadConeBase = Rsep*0.5*0.5; %Stay inside
 XVO = cos(pi/2)*Xunit2*HeadConeBase-sin(pi/2)*(Zunit2-1)*HeadConeLength; %easer not with matrix?
 YVO = Yunit2*HeadConeBase; 
@@ -29,17 +29,18 @@ ZVO = sin(pi/2)*Xunit2*HeadConeBase+cos(pi/2)*(Zunit2-1)*HeadConeLength;
 
 figure(10) %just to make sure..
 hold on; grid on; axis equal;
-set(gca,'ZDir','reverse','CameraPosition',[-22 -66 -30],'CameraViewAngle',9)
+set(gca,'ZDir','reverse','YDir','reverse','CameraPosition',[-22 -66 -30],'CameraViewAngle',9)
 
 ColSet = ['b'; 'r'; 'g'; 'm']; 
 for tii = 1:AgentNumber
     vAge(tii) = surf(XAge+XYZ_g(tii,1,1), YAge+XYZ_g(tii,2,1), ZAge+XYZ_g(tii,3,1),...  %the XYZ_g is just for initial
                 'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5); %making agent sphere
     hold on;
-    RotMatP = [cos(VTP_g(tii,1,1)) sin(VTP_g(tii,1,1)) 0; -sin(VTP_g(tii,1,1)) cos(VTP_g(tii,1,1)) 0 ; 0 0 1]; %3D turning to heading
-    RotMatT = [cos(VTP_g(tii,2,1)) 0 -sin(VTP_g(tii,2,1)); 0 1 0; sin(VTP_g(tii,2,1)) 0 cos(VTP_g(tii,2,1))];
-    RotMatV = [1 0 0; 0 cos(VTP_g(tii,2,1)) sin(VTP_g(tii,2,1)); 0 -sin(VTP_g(tii,2,1)) cos(VTP_g(tii,2,1))];
-    RotMat3D = RotMatV*RotMatT*RotMatP;
+    RotMatP = [cos(-VTP_g(tii,3,1)) sin(-VTP_g(tii,3,1)) 0; -sin(-VTP_g(tii,3,1)) cos(-VTP_g(tii,3,1)) 0 ; 0 0 1]; %3D turning to heading
+    RotMatT = [cos(-VTP_g(tii,2,1)) 0 -sin(-VTP_g(tii,2,1)); 0 1 0; sin(-VTP_g(tii,2,1)) 0 cos(-VTP_g(tii,2,1))];
+    RotMatV = [1 0 0; 0 cos(-VTP_g(tii,1,1)) sin(-VTP_g(tii,1,1)); 0 -sin(-VTP_g(tii,1,1)) cos(-VTP_g(tii,1,1))];
+    RotMat3D = RotMatP*RotMatT*RotMatV;
+    %RotMat3D = RotMatP;
     %rotate the heading
     XVO1 = XVO*RotMat3D(1,1)+YVO*RotMat3D(1,2)+ZVO*RotMat3D(1,3);
     YVO1 = XVO*RotMat3D(2,1)+YVO*RotMat3D(2,2)+ZVO*RotMat3D(2,3);
@@ -50,17 +51,37 @@ for tii = 1:AgentNumber
     InitDir(tii) = line([XYZ_g(tii,1,1) XYZ_goal(1,tii)],...
                         [XYZ_g(tii,2,1) XYZ_goal(2,tii)],...
                         [XYZ_g(tii,3,1) XYZ_goal(3,tii)]);
+    InitDir2(tii) = line([XYZ_g(tii,1,1) XYZ_g(tii,1,1)+10*UVW_g(tii,1,1)],...
+                        [XYZ_g(tii,2,1) XYZ_g(tii,2,1)+10*UVW_g(tii,2,1)],...
+                        [XYZ_g(tii,3,1) XYZ_g(tii,3,1)+10*UVW_g(tii,3,1)],'color','r');
 end
-
-
+disp(num2str(VTP_g(2,:,1)*57.3))
+%ilkyhgky
 %run it for sim time
 for sii = 1:length(RecUVW_g(1).Data)-1
     for tii = 1:AgentNumber
         set(vAge(tii),'XData',XAge+XYZ_g(tii,1,sii), ...
                       'YData',YAge+XYZ_g(tii,2,sii), ...
                       'ZData',ZAge+XYZ_g(tii,3,sii));
-        pause(0.2)
+        %Rot mat calculation is done every time step
+        RotMatP = [cos(-VTP_g(tii,3,sii)) sin(-VTP_g(tii,3,sii)) 0; -sin(-VTP_g(tii,3,sii)) cos(-VTP_g(tii,3,sii)) 0 ; 0 0 1]; %3D turning to heading
+        RotMatT = [cos(-VTP_g(tii,2,sii)) 0 -sin(-VTP_g(tii,2,sii)); 0 1 0; sin(-VTP_g(tii,2,sii)) 0 cos(-VTP_g(tii,2,sii))];
+        RotMatV = [1 0 0; 0 cos(-VTP_g(tii,1,sii)) sin(-VTP_g(tii,1,sii)); 0 -sin(-VTP_g(tii,1,sii)) cos(-VTP_g(tii,1,sii))];
+        RotMat3D = RotMatP*RotMatT*RotMatV;
+        %rotate the heading
+        XVO1 = XVO*RotMat3D(1,1)+YVO*RotMat3D(1,2)+ZVO*RotMat3D(1,3);
+        YVO1 = XVO*RotMat3D(2,1)+YVO*RotMat3D(2,2)+ZVO*RotMat3D(2,3);
+        ZVO1 = XVO*RotMat3D(3,1)+YVO*RotMat3D(3,2)+ZVO*RotMat3D(3,3);
+        set(vAgeHead(tii),'XData',XVO1+XYZ_g(tii,1,sii), ...
+                          'YData',YVO1+XYZ_g(tii,2,sii), ...
+                          'ZData',ZVO1+XYZ_g(tii,3,sii));
+                      
+        
     end
+    disp(num2str(VTP_g(2,:,sii)*57.3))
+    disp(num2str(XYZ_g(2,:,sii)*57.3))
+    disp(num2str(UVW_g(2,:,sii)*57.3))
+    pause(0.2)
 end
 
 
