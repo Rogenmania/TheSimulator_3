@@ -9,7 +9,7 @@ clear all; clc; close all;
 %%
 %Making the world.... making the object==================================
 AgentNumber = 2;
-tSimTiR = 5; %Recording Alocation
+tSimTiR = 10; %Recording Alocation
 tTiStR = 0.1; %Recording Save
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
@@ -156,7 +156,7 @@ for tii = 1:AgentNumber
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
 Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
-Agent(2).SetInit(XYZ_g(:,2)+[0;2;2],[2;0;0],VTP_g(:,2))
+Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
 %========================================================================
 
 %save InitCond
@@ -219,7 +219,7 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_3V(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;

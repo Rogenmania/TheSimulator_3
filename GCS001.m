@@ -83,16 +83,16 @@ classdef GCS001 < Computer
             DistToGoal = (sum((ToGoal).^2))^0.5;
                         
             %The TGoVel need to head to goal when it is on the path, but to go as soon to the pat when it is not on the path.
-            Fact = 0.0001; %meaning point 100 meters ahead?
+            Fact = 0.001; %meaning point 100 meters ahead?
             if DistToGoal < 0.0001 && MAC.DriftAvo(1) < 0.0001
                MAC.TGoVel = MAC.VelGlo;
             else
                MAC.TGoVel = MAC.DMaVel*(Fact*ToGoal+ToPath)/((sum((Fact*ToGoal+ToPath).^2))^0.5);
             end
-            Aaa = MAC.DriftAvo(1)
-            Bbb = (MAC.TGoVel)'
-            Ccc = ToPath'
-            %MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(ToPath));
+            Aaa = MAC.DriftAvo(1);
+            Bbb = (MAC.TGoVel)';
+            Ccc = ToPath';
+            
             %if the change of vel is only velocity based, then we are
             %finish. if it need to be angle and avoidan plane...
             %TheAvoplane is the palne that consisted current Vel vector and
@@ -100,59 +100,56 @@ classdef GCS001 < Computer
             %this wit the body, or simply the angle in body axis. First off
             %all, we need to find the plane of two vectors --> cross
             %product?
-            NAvoPlTGoVel = cross(MAC.TGoVel,[1 0 0]); %--> already in body axis, the nromal also in body,
+            
+            %change the roll until a desired angle, then turn. --> to
+            %support the theory, just keep it as yawing? or just turn...
+            %Actually, rolling will be just a matrix, while turning and
+            %turn rate, will be the rate..... THE ROLL is just a part of
+            %the matrix, conducted.. first? first
+            %for the GCS, teh avoidance plane is simply the plane where
+            %TGoal and vector 100 lies. the normal of this vectors:
+            %BUT in Body axis.. 
+            NAvoPlTGoVel = cross(MAC.MatE2B*MAC.TGoVel,[1 0 0]); %--> already in body axis, the nromal also in body,
+            
             %above does not work when its the same. on Y and Z.
-            %the Z axis --? [0 0 1]; so the dihedral
+            %the Z axis --? [0 0 1]; so the roll angle:
             NorLeng = sum((NAvoPlTGoVel).^2)^0.5;
             if NorLeng == 0
                 AVoPl = 0; %dont move... actualy, any plane will do, but we just keep it as dont move
             else
                 AVoPl = acos((dot(NAvoPlTGoVel,[0 0 1]))/((sum((NAvoPlTGoVel).^2))^0.5)); %remember unit vector
-                %since there are no pos/neg, use the sign of the Y in
-                %TGOVel
+                %since there are no pos/neg, use the sign of the Y in TGOVel
                 AVoPl = sign(NAvoPlTGoVel(2))*AVoPl;
             end
-            %the heading? if.. pitch or head? --> at 45 degree?
-            if AVoPl > pi/2 %just to limit
+            
+            if AVoPl > pi/2 %just to limit, but seems not possible
                 AVoPl = AVoPl-pi;
- 
-            elseif AVoPl < -pi/2
+            elseif AVoPl < -pi/2 % also not possible. the result will always positive
                 AVoPl = AVoPl+pi;
             end
+            %above result is always the smallest angle. need to be cautious
+            %about the direction of the next turning.
+            RollCom = AVoPl;
+            PitchCom = 0; %Current Pitch
+            BodTGoVel = MAC.MatE2B*MAC.TGoVel;
+            YawCom = acos(dot([1 0 0],BodTGoVel')/...
+                         ((sum(BodTGoVel.^2))^0.5));
+            %also always positive. How to decide the turning direction? to
+            %the driection of TGoVel of course.
+            %YawCom = -sign(BodTGoVel(2))*YawCom;
             
-            if AVoPl >= -pi/4 && AVoPl <= pi/4 %
-                %then go change heading
-                RollCom = AVoPl;
-                PitchCom = 0; %Current Pitch
-                %only need the X and Y of TGOvel
-                YawCom = acos(dot([1 0 0],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
-                         ((MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
-                %since there are no pos/neg, use the sign of the Y in
-                %TGOVel
-                YawCom = -sign(MAC.TGoVel(2))*YawCom;
-            else
-                RollCom = AVoPl-pi/2;
-                %go change pitch
-                YawCom = 0; %current Yaw
-                PitchCom = acos(dot([1 0 0],[MAC.TGoVel(1) MAC.TGoVel(2) MAC.TGoVel(3)])/...
-                           ((MAC.TGoVel(1)^2+MAC.TGoVel(2)^2+MAC.TGoVel(3)^2)^0.5));
-                %since there are no pos/neg, use the sign of the Z in
-                %TGOVel
-                PitchCom = sign(MAC.TGoVel(3))*PitchCom;
-            end
-            
-            if RollCom > pi/2  %just to limit
-                RollCom = RollCom-pi;
-            elseif RollCom < -pi/2
-                RollCom = RollCom+pi;
-            end
+%             if RollCom > pi/2  %just to limit
+%                 RollCom = RollCom-pi;
+%             elseif RollCom < -pi/2
+%                 RollCom = RollCom+pi;
+%             end
             Rol =RollCom*57.3;
             Pit =PitchCom*57.3;
             Yaw =YawCom*57.3;
             
             MAC.Decision(:,1) = [MAC.TGoVel-MAC.VelGlo; ...
                                  RollCom; PitchCom; YawCom];
-            %Aaa = MAC.Decision.*[1;1;1;57.3;57.3;57.3];
+            Aaa = MAC.Decision.*[1;1;1;57.3;57.3;57.3]
             %Ro = csvread('DecRec.txt');
             %csvwrite('DecRec.txt',[Ro ; Aaa'])
 

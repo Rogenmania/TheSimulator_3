@@ -69,16 +69,23 @@ classdef UAV < handle
             RolRate = 1;%30/180*pi; %deg/sec
             PitRate = 1;%30/180*pi;
             YawRate = 1;%30/180*pi;
-            RolTi = UAVC.InputDA(1)*GRol*RolRate*TiSt;
+            RolTi = UAVC.InputDA(1)*GRol*RolRate;
             PitTi = UAVC.InputDA(2)*GPit*PitRate*TiSt; 
             YawTi = UAVC.InputDA(3)*GYaw*YawRate*TiSt; 
-            
-            Rot3D = [cos(PitTi)*cos(YawTi) cos(PitTi)*sin(YawTi) -sin(PitTi);
-                    -cos(RolTi)*sin(YawTi)+sin(RolTi)*sin(PitTi)*cos(YawTi) cos(RolTi)*cos(YawTi)+sin(RolTi)*sin(PitTi)*sin(YawTi) sin(RolTi)*cos(PitTi);
-                     sin(RolTi)*sin(YawTi)+cos(RolTi)*sin(PitTi)*cos(YawTi) -sin(RolTi)*cos(YawTi)+cos(RolTi)*sin(PitTi)*sin(YawTi) cos(RolTi)*cos(PitTi)];
-            UAVC.GloVel= Rot3D*UAVC.GloVel;
+            RotRoll = [1 0 0; 
+                       0 cos(RolTi) sin(RolTi);
+                       0 -sin(RolTi) cos(RolTi)];
+            RotTurn = [cos(YawTi) sin(YawTi) 0;
+                       -sin(YawTi) cos(YawTi) 0;
+                       0 0 1];
+            RotAvo = RotRoll*RotTurn; %Roll First!
+            UAVC.BodVel= RotAvo*UAVC.BodVel;
+            RotB2E = [1 0 0; 0 cos(UAVC.GloAtt(1)) sin(UAVC.GloAtt(1)); 0 -sin(UAVC.GloAtt(1)) cos(UAVC.GloAtt(1))]*...
+                     []*...
+                     [];
+            UAVC.GloVel= RotB2E*RotAvo*UAVC.GloVel;
             UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
-            UAVC.GloAtt = UAVC.GloAtt + [RolTi; PitTi; YawTi];
+            %UAVC.GloAtt = UAVC.GloAtt + [RolTi; PitTi; YawTi];
             
             %reach or put these input to zero by turning? So InoputDA -
             %will control the turn in three axis, but how abot trolling
