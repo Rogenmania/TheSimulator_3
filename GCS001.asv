@@ -143,7 +143,6 @@ classdef GCS001 < Computer
             PitchCom = 0; %Current Pitch
             YawCom = acos(dot([1; 0; 0],MAC.TGoVel)/...
                          ((sum(MAC.TGoVel.^2))^0.5));
-            %suppose that the yawrate is for
             %the angle is the turning of the bod velocity arm. 
             %such that MatCom*VelBo. and Velco is MatE2B*VelGlo. hence the
             %input should be MatCom*MatE2B. Is actually redundant. we can
@@ -154,7 +153,7 @@ classdef GCS001 < Computer
             %actually, just pitch and yaw... So the previous is still
             %correct?
             %then, global vel that need to be added are? 
-            MatCom = MAC.RotMat([-RollCom; PitchCom; -YawCom],-3); %Reverse since roll first. neg since its not neg
+            MatCom = MAC.RotMat([RollCom; PitchCom; YawCom]);
             MatCom*MatB2E*VelBo - VelGloNow 
             
             %also always positive. How to decide the turning direction? to

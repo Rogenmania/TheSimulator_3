@@ -219,7 +219,7 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3V(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;
