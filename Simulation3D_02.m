@@ -114,7 +114,7 @@ Aa1 = VTP_g(:,2);
 RelVelB = R2Bod0*RelVel;
 
 %The end of the road
-Tifin = 10; %until it stop. Does not matter
+Tifin = 1000; %until it stop. Does not matter
 XYZfin_g = XYZ_g + UVW_g*Tifin;%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %=========================================================================
 
@@ -132,6 +132,7 @@ VTP_g = [0 0;
 VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
 XYZfin_g = XYZ_g + UVW_g*Tifin;
 %%
+
 %if you want scenario visualization======================================
 %InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
@@ -154,7 +155,8 @@ for tii = 1:AgentNumber
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-Agent(1).SetInit([0;0;2],[2;0;0],VTP_g(:,1))
+Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
+Agent(2).SetInit(XYZ_g(:,2)+[0;2;2],[2;0;0],VTP_g(:,2))
 %========================================================================
 
 %save InitCond

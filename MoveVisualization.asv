@@ -31,16 +31,11 @@ ZVO = sin(pi/2)*Xunit2*HeadConeBase+cos(pi/2)*(Zunit2-1)*HeadConeLength;
 figure(10) %just to make sure..
 hold on; grid on; axis equal;
 set(gca,'ZDir','reverse','YDir','reverse','CameraPosition',[-62 101 -35],'CameraViewAngle',9,...
-        'View',[-35.4711 15.846])
-axis([0 20 -10 10 -10 10])
+        'View',[-35.4711 15.846],'Projection','perspective')
+
 ColSet = ['b'; 'r'; 'g'; 'm']; 
-
-ForTrckX = zeros(1,DatNum); 
-ForTrckY = zeros(1,DatNum);
-ForTrckZ = zeros(1,DatNum);
-
 for tii = 1:AgentNumber
-    TrackLine(tii) = line(XYZ_g(tii,1,1), XYZ_g(tii,2,1), XYZ_g(tii,3,1),'LineStyle','--','Color','k','linewidth',1.5);
+    TrackLine(tii) = line(zeros(1,DatNum),zeros(1,DatNum),zeros(1,DatNum));
     
     vAge(tii) = surf(XAge+XYZ_g(tii,1,1), YAge+XYZ_g(tii,2,1), ZAge+XYZ_g(tii,3,1),...  %the XYZ_g is just for initial
                 'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5); %making agent sphere
@@ -85,12 +80,9 @@ for sii = 1:DatNum
                           'YData',YVO1+XYZ_g(tii,2,sii), ...
                           'ZData',ZVO1+XYZ_g(tii,3,sii));
                       
-        %ForTrckX(1,DatNum-sii) = XYZ_g(tii,1,sii);
-        %ForTrckY(1,DatNum-sii) = XYZ_g(tii,1,sii);
-        %ForTrckZ(1,DatNum-sii) = XYZ_g(tii,1,sii);
-        set(TrackLine(tii),'XData',[get(TrackLine(tii),'XData'), XYZ_g(tii,1,sii)], ...
-                           'YData',[get(TrackLine(tii),'YData'), XYZ_g(tii,2,sii)], ...
-                           'ZData',[get(TrackLine(tii),'ZData'), XYZ_g(tii,3,sii)]);
+        set(TrackLine(tii),'XData',XYZ_g(tii,1,sii), ...
+                           'YData',XYZ_g(tii,2,sii), ...
+                           'ZData',XYZ_g(tii,3,sii));
                       
         
     end

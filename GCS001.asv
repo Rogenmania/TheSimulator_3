@@ -83,15 +83,14 @@ classdef GCS001 < Computer
             DistToGoal = (sum((ToGoal).^2))^0.5;
                         
             %The TGoVel need to head to goal when it is on the path, but to go as soon to the pat when it is not on the path.
-            Fact = 0.0001; %meaning point 100 meters ahead?
+            Fact = 0.001; %meaning point 100 meters ahead?
             if DistToGoal < 0.0001 && MAC.DriftAvo(1) < 0.0001
-               MAC.TGoVel = MAC.VelGlo;
+               MAC.TGoVel = [0;0;0];
             else
                MAC.TGoVel = MAC.DMaVel*(Fact*ToGoal+ToPath)/((sum((Fact*ToGoal+ToPath).^2))^0.5);
             end
             Aaa = MAC.DriftAvo(1)
-            Bbb = (MAC.TGoVel)'
-            Ccc = ToPath'
+            Bbb = 
             %MAC.TGoVel = MAC.MatE2B*(MAC.DMaVel*(ToPath));
             %if the change of vel is only velocity based, then we are
             %finish. if it need to be angle and avoidan plane...
