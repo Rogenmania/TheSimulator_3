@@ -6,8 +6,10 @@ classdef Computer < handle
         %First Input / Setting 
         DBoVel
         DMaVel
-        FliPath
+        FliPath       %global
+        FliPathBod    %Body
         FliPathAng
+        
         AbsType
         AbsPoin
         AvoPath = [0 50]
@@ -24,7 +26,7 @@ classdef Computer < handle
         MatB2E
         MatW2B
         %Output for Dynamic, 2 calculation?
-        Decision      %Decision Delta V
+        Decision     
         %Manager Function
         WUse = 1;
         %Obstacle sensor
@@ -37,17 +39,17 @@ classdef Computer < handle
         AttWi
         PosGlo
         VelGlo
-        HeaGlo
+        AttGlo
     end
     
     methods
-        function MAC = Computer(DBoVel,Heading,FliPath)
+        function MAC = Computer(DBoVel,Attitude,FliPath)
                       %input
             MAC.DBoVel = DBoVel;
             MAC.DMaVel = (sum(DBoVel.^2))^0.5;
             MAC.TGoVel = DBoVel;
             MAC.FliPath  = FliPath;
-            MAC.HeaGlo = Heading;
+            MAC.AttGlo = Attitude;
             
                
         end
@@ -55,32 +57,37 @@ classdef Computer < handle
             %Own State
             MAC.PosGlo = SensGPos;%(X,Y,Z), should be GPS output
             MAC.VelGlo = SensGVel; %maybe should be indirect
-            %MAC.HeaGlo = atan2(SensGVel(2),SensGVel(1));
+            %MAC.AttGlo = atan2(SensGVel(2),SensGVel(1));
             MAC.VelBo = SensVel;%Vxb, Vyb, Vzb
             MAC.AttWi = SensAtt;
+            MAC.CalcSensor()
             
-            %Obstacle, with additional, flight path limit!
+            %Obstacles State
             MAC.ObPosGlo = SensObPos; % ]
             MAC.ObVelGlo = SensObVel; % ]
             MAC.NumObs = size(MAC.ObPosGlo);
-            MAC.CalcSensor()
+            %computation from the sensor data is done in CAS
        
         end
         function CalcSensor(MAC)
             %Calculate Heading 3D, from ObVelGlo ?
             
-            MAC.HeaGlo = MAC.Vect2Angls(MAC.VelGlo);
+            MAC.AttGlo = MAC.Vect2Angls(MAC.VelGlo);
             
             %Global to Body Rotational Matrix 
             %earth to Body, just turn backwards... 
             %we need this for the obstacles. or other vector like ToGoal
-            MAC.MatE2B = MAC.RotMat(MAC.HeaGlo,3); 
-            MAC.MatB2E = MAC.RotMat(MAC.HeaGlo,-3); 
+            MAC.MatE2B = MAC.RotMat(MAC.AttGlo,3); 
+            MAC.MatB2E = MAC.RotMat(MAC.AttGlo,-3); 
             %Path to Body 
             
             %Path to Global
             MAC.FliPathAng = MAC.Vect2Angls(MAC.FliPath(:,2)-MAC.FliPath(:,1));
             MAC.MatP2E = MAC.RotMat(MAC.FliPathAng,3);
+            
+            %Global FlightPath
+            MAC.FliPathBod(:,1) = MAC.MatE2B*(MAC.FliPath(:,1)-MAC.PosGlo);
+            MAC.FliPathBod(:,2) = MAC.MatE2B*(MAC.FliPath(:,2)-MAC.PosGlo);
 
         end
         

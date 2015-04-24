@@ -192,26 +192,22 @@ classdef CAS004< Computer
                     MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,1);
                 end
                 
+                %this part here... only u
                 if MAC.ObDist(ii) < MAC.CASDistDat(3,MAC.Cate,MAC.ObsCats(ii))
                     MAC.CASFlag(ii+1) = 3;  %inside escape sphere
-                elseif MAC.ObDist(ii) < (MAC.CASDistDat(2,MAC.Cate,MAC.ObsCats(ii))*MAC.AvoTy);
+                elseif MAC.ObDist(ii) < (MAC.CASDistDat(2,MAC.Cate,MAC.ObsCats(ii))*MAC.AvoTy); %the MAC.AvoTy is a choice
                     MAC.CASFlag(ii+1) = 2;  %inside deconf sphere
                 elseif MAC.ObDist(ii) < MAC.CASDistDat(1,MAC.Cate,MAC.ObsCats(ii))
                     MAC.CASFlag(ii+1) = 1;  %inside warning sphere
                 else
                     MAC.CASFlag(ii+1) = 0;  %do nothing - too far
                 end
-                
-                %if  -- one more if to determined when to avoid. Can be a
-                %range?
-                
                 %above is good, but we can actually fixed it using two
                 %digit flag. One just for the zones, and one for whether it
                 %is less than he avoidance distance AvoTy. AvoTy can be a
                 %real number, not a fraction then... Also, it chould be for each
                 %obstacle. Also, flag when its colliding
             end
-            %below is the summary?
             MAC.CASFlag(1) = max(MAC.CASFlag(2:MAC.NumObs(2)+1));
         end     
         function WarningSys(MAC)

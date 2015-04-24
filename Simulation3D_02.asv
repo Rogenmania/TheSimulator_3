@@ -119,18 +119,18 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;%++++++++++++++++++++++++++++++++++++++++++++++++
 %=========================================================================
 
 %% Dumd Scenario
-% XYZ_g = [0 10+10/(3^0.5); 
-%          0 10/(3^0.5);
-%          0 -10/(3^0.5)];
-% UVW_g = [2 -2/(3^0.5);
-%          0 -2/(3^0.5);
-%          0 2/(3^0.5)];
-% UVW_b = [2 2; 0 0; 0 0];
-% VTP_g = [0 0;
-%          0 54.7330-90;
-%          0 90-45]/180*pi;
-% VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
-% XYZfin_g = XYZ_g + UVW_g*Tifin;
+XYZ_g = [0 10+10/(3^0.5); 
+         0 10/(3^0.5);
+         0 -10/(3^0.5)];
+UVW_g = [2 -2/(3^0.5);
+         0 -2/(3^0.5);
+         0 2/(3^0.5)];
+UVW_b = [2 2; 0 0; 0 0];
+VTP_g = [0 0;
+         0 54.7330-90;
+         0 90-45]/180*pi;
+VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
+XYZfin_g = XYZ_g + UVW_g*Tifin;
 %%
 
 %if you want scenario visualization======================================
@@ -141,7 +141,7 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;%++++++++++++++++++++++++++++++++++++++++++++++++
 %Puting Init Value into Objects =========================================
 %dynamic parameter
 NTurnRate = 10/180*pi;
-GoalvPath = 0.001;
+PathvGoal = 0.001;
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -149,7 +149,7 @@ for tii = 1:AgentNumber
     AttSens(tii).SetInit(VTP_g(:,tii));
     GPSP(tii).SetInit(XYZ_g(:,tii));
     %CASManager?
-    GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],NTurnRate,GoalvPath);
+    GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],NTurnRate,PathvGoal);
     CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],0,0);
     
     RecXYZ_g(tii).AddRecord(Agent(tii).GloPos)
@@ -200,7 +200,7 @@ while ElaTi < TimeEnd
         
         %Avoidance Computer
         GCS(ii).GCSRun()                                                   %GCS Computer analyzing and deciding
-        %CAS(ii).ReadGCS(GCS(ii).TGoVel)                                    %CAS Computer read data from GCS and set info for GCS
+        CAS(ii).ReadGCS(GCS(ii).TGoVel)                                    %CAS Computer read data from GCS and set info for GCS
         CAS(ii).ACASRun()                                                  %CAS Computer analyzing and deciding
         
         %GCS(ii).ReadCAS(CAS(ii).CASFlag,CAS(ii).Decision,CAS(ii).Interupt) %GCS Computer read data and interupt from CAS
@@ -222,7 +222,7 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
-        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3V(RecXYZ_g(1).TimeStep)
         dde=0;
     end
     ElaTi = ElaTi + TiSt;
@@ -235,7 +235,47 @@ clear all;
 %%
 MoveVisualization
 %========================================================================
+
 %%
+
+iguuih
+TiStCh = 1; %time step when the input is checked?
+SimTi = 100; % Simulation Time
+CuTi = 0;
+Ddn = 0; %Number of Data
+Rrn = 0; %Number of Record
+while CuTi < SimTi
+    %calculate the Navigation Equations --> with current UVW and VTP
+    %FOR each vehicle!
+    [T,NEPo]=ode45(@(t,y) NavEq(t,UVWo,VTPo),TiStCh,NEPo);
+    
+    %record all states
+    
+    %Update Visualization?
+    
+    %then check VO situation  --> just for the ownship? at first...
+    
+    
+    %Update UVW and VTP? --> actually need a turning rate? = R? or psidot?
+    %psidot = Rcosvee/costhet (but for input?)
+    
+    
+    %Update time and datnum
+    CuTi = CuTi+TiStCh;
+    Ddn = Ddn + 1;
+end
+%run it, and check it on a constant time step? looks like it
+%Check the VO criteria
+
+
+line(NEPo(:,1),NEPo(:,2),NEPo(:,3))
+
+
+%As what? a Quadrotor model? input on throttle? actually thats not we want.
+%except for very close escape? but we are not talking about that are we?
+%but turning rate still make sense? Turnig rate on that avoidance plane?
+%actually make sense? for fixed and rotary, can be translated to force and
+%moment? actually moment... we try not to change the orientation much? 
 
 
 

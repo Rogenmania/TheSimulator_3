@@ -63,40 +63,6 @@ classdef UAV < handle
         end
         function MoveTimeD_3(UAVC,TiSt)%A threeD movement, but linear
             %first roll?
-            GRol = 1; %maybe this need to be big. or should it be instanteneous? 
-            GPit = 1;
-            GYaw = 1;
-            RolRate = 1;%30/180*pi; %deg/sec
-            PitRate = 1;%30/180*pi;
-            YawRate = 1;%30/180*pi;
-            RolTi = UAVC.InputDA(1)*GRol*RolRate;
-            PitTi = UAVC.InputDA(2)*GPit*PitRate*TiSt; 
-            YawTi = UAVC.InputDA(3)*GYaw*YawRate*TiSt; 
-            RotRoll = [1 0 0; 
-                       0 cos(RolTi) sin(RolTi);
-                       0 -sin(RolTi) cos(RolTi)];
-            RotTurn = [cos(YawTi) sin(YawTi) 0;
-                       -sin(YawTi) cos(YawTi) 0;
-                       0 0 1];
-            RotAvo = RotRoll*RotTurn; %Roll First!
-            UAVC.BodVel= RotAvo*UAVC.BodVel;
-            %RotB2E = [1 0 0; 0 cos(UAVC.GloAtt(1)) sin(UAVC.GloAtt(1)); 0 -sin(UAVC.GloAtt(1)) cos(UAVC.GloAtt(1))]*...
-            %         []*...
-            %         [];
-            UAVC.GloVel= RotB2E*RotAvo*UAVC.GloVel;
-            UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
-            %UAVC.GloAtt = UAVC.GloAtt + [RolTi; PitTi; YawTi];
-            
-            %reach or put these input to zero by turning? So InoputDA -
-            %will control the turn in three axis, but how abot trolling
-            %first?
-            
-            %[T,NEPo]=ode45(@(t,y) NavEq(t,UVWo,VTPo),TiStCh,NEPo);
-            
-            
-        end
-        function MoveTimeD_3V(UAVC,TiSt)%A threeD movement, but linear
-            %first roll?
 
             RolTi = UAVC.InputDA(1);
             PitTi = UAVC.InputDA(2); 
@@ -107,9 +73,9 @@ classdef UAV < handle
             VvTi = UAVC.InputDV(2);
             WwTi = UAVC.InputDV(3);
             
-            UAVC.GloVel= UAVC.GloVel+[UuTi; VvTi; WwTi];
+            UAVC.GloVel= UAVC.GloVel+UAVC.InputDV;
             UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
-            %UAVC.GloAtt = UAVC.GloAtt + [RolTi; PitTi; YawTi];
+            UAVC.GloAtt = UAVC.GloAtt + UAVC.InputDA;
             
             %reach or put these input to zero by turning? So InoputDA -
             %will control the turn in three axis, but how abot trolling
