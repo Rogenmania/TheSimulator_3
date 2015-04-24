@@ -65,7 +65,8 @@ classdef Computer < handle
             %Obstacles State
             MAC.ObPosGlo = SensObPos; % ]
             MAC.ObVelGlo = SensObVel; % ]
-            MAC.NumObs = size(MAC.ObPosGlo);
+            NuNumObs = size(MAC.ObPosGlo);
+            MAC.NumObs = NuNumObs(2); 
             %computation from the sensor data is done in CAS
        
         end

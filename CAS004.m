@@ -8,7 +8,7 @@ classdef CAS004< Computer
         Multiple
         Priorities
         Rule = 1
-        CASFlag = 0
+        CASFlag = zeros(3,51)
         VOFlag = 0
         
         SepRad
@@ -60,20 +60,27 @@ classdef CAS004< Computer
         Cate
         
         %Proximity Sensor Input
-        ObsNum   %[NEW]
         ImObsNum %Number of imminent object [NEW]
         ObVelAbs = zeros(50,1)
         ObDist = zeros(50,1)
         ObDistFF  = zeros(50,1)
         ObPosBod = zeros(3,50)
         ObPosBodFF = zeros(3,50)
-        ObAngBod = zeros(50,1)
+        ObAngBod = zeros(3,50)
         ObVelBod = zeros(3,50)
         ObVelABod = zeros(3,50)
         RelVelBod 
         RelVelABod  %[NEW]
         RelVelAbs   %[NEW]
         RelVelBodTG
+        
+        VORad = zeros(50,1)
+        VODis = zeros(50,1)
+        VOBAng = zeros(50,1)
+        VOVRel = zeros(3,50)
+        VOAp = zeros(3,50)
+        TiVOBp = 0:2*pi/36:2*pi %^the size of this need to be det in initial
+        VOBp = zeros(3,37,50) %^the size of this need to be det in initial
     end
     
     methods
@@ -92,20 +99,18 @@ classdef CAS004< Computer
             %whole computations
            ObsStateCalc(MAC); %obstacles states!! also the number of detected obstacle
            CheckDistance(MAC); %first Check the Distance. further, VO not calculated. ObsCats  and  CASFlag
+                 %actually dont need to calculate VOP if is not imminent, or if
+                 %it is not inside VO. but we just try to calculate all.
+                 %Only not avoid
+           VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....
            
-           WarningSys(MAC); %triger warning, but basically here, it doesn;t do anything fancy, based on CASFlag
-           
-           VelocityObstacle(MAC); %Check threats, well this make the ACAS calculating all the time....
-           %This results MacVoLuDa (whether or not (both) rel vel inside VO
-           %     and also RoW (wether or not have Right of Way)
-           
-           %then, with CASFlag, MacVoLuDa and RoW
+           %then, with CASFlag, and MacVoLuDa 
            %according to CASFlag, do nothing, deconf, or aggresive
-           switch MAC.CASFlag(1)
-               case 1    % warning sphere
+           switch MAC.CASFlag(1,1) %for 3D, only use imminence
+               case 0    % not imminent
                    %what?
-               case {2,3}    % deconf sphere, and for temporary the avoidance Sphere
-                   %according to MacVoLuDa and RoW?
+               case 1    % imminent
+                   %according to MacVoLuDa
                    if sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) > 0 && ...
                       sum(MAC.VOLuDa(2,:)) > 0 % C and TG -RelVel, even just one
                        MAC.Bababa = 1;
@@ -150,82 +155,119 @@ classdef CAS004< Computer
         function ObsStateCalc(MAC)
             %Distance, Velocity and Position of Obstacle, in OwnAircraft
             %Body Axis
-            SizeOb = size(MAC.ObPosGlo); MAC.ObsNum = SizeOb(2);
-            for ii = 1:MAC.ObsNum
+            for ii = 1:MAC.NumObs
                 MAC.ObDist(ii) = sqrt(sum((MAC.ObPosGlo(:,ii)-MAC.PosGlo).^2));
                 MAC.ObVelAbs(ii) = sqrt(sum((MAC.ObVelGlo(:,ii)).^2));
                 MAC.ObPosBod(:,ii) = MAC.MatE2B*(MAC.ObPosGlo(:,ii)-MAC.PosGlo);
-                MAC.ObAngBod(:,ii) = Vect2Angls(MAC.ObPosBod(:,ii)); %angles
+                MAC.ObAngBod(:,ii) = MAC.Vect2Angls(MAC.ObPosBod(:,ii)); %angles
                 MAC.ObVelBod(:,ii) = MAC.MatE2B*MAC.ObVelGlo(:,ii);
-                MAC.ObVelABod(:,ii) = Vect2Angls(MAC.ObVelBod(:,ii)); %angles
+                MAC.ObVelABod(:,ii) = MAC.Vect2Angls(MAC.ObVelBod(:,ii)); %angles
                 
                 %Calculate Relative Values, usefull for 3DVO inclusion determination
                 MAC.RelVelBod(:,ii) =  MAC.VelBo - MAC.ObVelBod(:,ii); 
-                MAC.RelVelABod(:,ii) = Vect2Angls(MAC.RelVelBod(:,ii)); %angles
+                MAC.RelVelABod(:,ii) = MAC.Vect2Angls(MAC.RelVelBod(:,ii)); %angles
                 MAC.RelVelAbs(ii) =  (sum(MAC.RelVelABod(:,ii).^2))^0.5;
             end                         
         end
         
         function CheckDistance(MAC)
             %use the MAC.ObDist properties --> Obstacles Distances
-            %check categories? how about manned?
-            %use MAC.ObVelAbs?
-            for ii = 1:MAC.NumObs(2) %also with itself
-                %MAC.ObsCats(ii) = MAC.CatFall(MAC.ObVelAbs(ii));
+            %check categories? 
+            for ii = 1:MAC.NumObs
                 if MAC.ObVelAbs(ii) > MAC.CASVeloDat(5)
                     MAC.ObsCats(ii) = 6;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,6);
                 elseif MAC.ObVelAbs(ii) > MAC.CASVeloDat(4)
                     MAC.ObsCats(ii) = 5;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,5);
                 elseif MAC.ObVelAbs(ii) > MAC.CASVeloDat(3)
                     MAC.ObsCats(ii) = 4;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,4);
                 elseif MAC.ObVelAbs(ii) > MAC.CASVeloDat(2)
                     MAC.ObsCats(ii) = 3;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,3);
                 elseif MAC.ObVelAbs(ii) > MAC.CASVeloDat(1);
                     MAC.ObsCats(ii) = 2;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,2);
                 else
                     MAC.ObsCats(ii) = 1;
-                    MAC.SepRad(ii) = MAC.CASDistDat(1,MAC.Cate,1);
                 end
                 
-                if MAC.ObDist(ii) < MAC.CASDistDat(3,MAC.Cate,MAC.ObsCats(ii))
-                    MAC.CASFlag(ii+1) = 3;  %inside escape sphere
-                elseif MAC.ObDist(ii) < (MAC.CASDistDat(2,MAC.Cate,MAC.ObsCats(ii))*MAC.AvoTy);
-                    MAC.CASFlag(ii+1) = 2;  %inside deconf sphere
-                elseif MAC.ObDist(ii) < MAC.CASDistDat(1,MAC.Cate,MAC.ObsCats(ii))
-                    MAC.CASFlag(ii+1) = 1;  %inside warning sphere
+                for jj = 1:4 %the four radii - TW, Dec, Esc, Pz
+                    MAC.SepRad(jj,ii) = MAC.CASDistDat(jj,MAC.Cate,MAC.ObsCats(ii));
+                end
+                
+                if MAC.ObDist(ii) < MAC.AvoTy
+                    MAC.CASFlag(1,ii+1) = 1;  %Imminent
                 else
-                    MAC.CASFlag(ii+1) = 0;  %do nothing - too far
+                    MAC.CASFlag(1,ii+1) = 0;
                 end
                 
-                %if  -- one more if to determined when to avoid. Can be a
-                %range?
-                
-                %above is good, but we can actually fixed it using two
-                %digit flag. One just for the zones, and one for whether it
-                %is less than he avoidance distance AvoTy. AvoTy can be a
-                %real number, not a fraction then... Also, it chould be for each
-                %obstacle. Also, flag when its colliding
+                if MAC.ObDist(ii) < MAC.CASDistDat(4,MAC.Cate,MAC.ObsCats(ii))
+                    MAC.CASFlag(2,ii+1) = 4;  %collideded
+                elseif MAC.ObDist(ii) < MAC.CASDistDat(3,MAC.Cate,MAC.ObsCats(ii))
+                    MAC.CASFlag(2,ii+1) = 3;  %inside escape sphere
+                elseif MAC.ObDist(ii) < (MAC.CASDistDat(2,MAC.Cate,MAC.ObsCats(ii))*MAC.AvoTy);
+                    MAC.CASFlag(2,ii+1) = 2;  %inside deconf sphere
+                elseif MAC.ObDist(ii) < MAC.CASDistDat(1,MAC.Cate,MAC.ObsCats(ii))
+                    MAC.CASFlag(2,ii+1) = 1;  %inside warning sphere
+                else
+                    MAC.CASFlag(2,ii+1) = 0;  %do nothing - too far
+                end
             end
             %below is the summary?
-            MAC.CASFlag(1) = max(MAC.CASFlag(2:MAC.NumObs(2)+1));
+            MAC.CASFlag(1,1) = max(MAC.CASFlag(1,2:MAC.NumObs+1));
+            MAC.CASFlag(2,1) = max(MAC.CASFlag(2,2:MAC.NumObs+1));
         end     
-        function WarningSys(MAC)
-        %function send nessesary Warning
-        %if CASFlag 1-2-3
-        OutD3 = MAC.CASFlag;
         
-        if MAC.CASFlag ~= 0
-            %warn according to CASFlag
-            %at this point, only change UAV properties, which means, let UAV do the work.. :) 
-            
+        function VelocityObstacle3D(MAC)
+            %lets follow the paper
+            %The VO-cone properties
+
+            %MAC.VOBasAng(1:MAC.VONumber) = asin((1.1*MAC.SepRad')./MAC.ObDist(1:MAC.VONumber));
+             for ii = 1:MAC.NumObs
+                %lets follow the paper
+                %The VO-cone properties
+                MAC.VORad(ii) = MAC.SepRad(4,ii)*(MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)^0.5/MAC.ObDist(ii);
+                MAC.VODis(ii) = (MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)/MAC.ObDist(ii); %fourth SepRad, since we are working in EscapeSphr
+                MAC.VOBAng(ii) = atan2(MAC.VORad(ii),MAC.VODis(ii));
+                %f
+                %turning the RelVels to negate the ObsAng
+                MAC.VOVRel(:,ii) = MAC.RotMat(MAC.ObAngBod(:,ii),3)*MAC.RelVelBod(:,ii);
+                %determining the inclusion
+                if MAC.VOVRel(1,ii) > 0 && ...
+                  ((MAC.VOVRel(2,ii)^2+MAC.VOVRel(3,ii)^2)^0.5)/(MAC.VOVRel(1,ii)) < (MAC.VORad(ii))/(MAC.VODis(ii))
+                  %just use the third CASFlag
+                  MAC.CASFlag(3,ii+1) = 1;
+                  MAC.CASFlag(3,1) = max(MAC.CASFlag(3,2:MAC.NumObs+1));
+                else
+                  MAC.CASFlag(3,ii+1) = 0;
+                  MAC.CASFlag(3,1) = max(MAC.CASFlag(3,2:MAC.NumObs+1));  
+                end
+
+                %Now for each obstacle, we ar going to define the A and B
+                MAC.VOAp(:,ii) =  MAC.ObVelBod(:,ii);
+                MAC.TiVOBp = 0:2*pi/36:2*pi;
+                for jj = 1:length(MAC.TiVOBp); %this is the t of the circle
+                    Rota = MAC.RotMat(MAC.ObAngBod(:,ii),-3);
+                    MAC.VOBp(:,jj,ii) = Rota*[MAC.VODis(ii);MAC.VORad(ii)*cos(MAC.TiVOBp(jj));MAC.VORad(ii)*sin(MAC.TiVOBp(jj))] + MAC.VOAp(:,ii);
+                end
+                
+                chch = 0;
+                if chch > 0
+                    VOA = MAC.VOAp;
+                    VOB = MAC.VOBp;
+                    plot3([VOA(1,ii) VOB(1,1:round(end/4),ii) VOA(1,ii) VOB(1,round(end/4):round(end/2),ii) VOA(1,ii) VOB(1,round(end/2):round(3*end/4),ii) VOA(1,ii) VOB(1,round(3*end/4):end,ii)],...
+                          [VOA(2,ii) VOB(2,1:round(end/4),ii) VOA(2,ii) VOB(2,round(end/4):round(end/2),ii) VOA(2,ii) VOB(2,round(end/2):round(3*end/4),ii) VOA(2,ii) VOB(2,round(3*end/4):end,ii)],...
+                          [VOA(3,ii) VOB(3,1:round(end/4),ii) VOA(3,ii) VOB(3,round(end/4):round(end/2),ii) VOA(3,ii) VOB(3,round(end/2):round(3*end/4),ii) VOA(3,ii) VOB(3,round(3*end/4):end,ii)]); grid on; axis equal;
+                    stopppp
+                end
+             end
         end
         
+        function VOAvoPlane(MAC)
+            %actually only need to run if it is included in the VO3D and imminent....
+            for ii = 1:MAC.NumObs
+                %We need access to VOAp and VOBp, and other VO properties
+                
+            end
         end
+        
         
         function VelocityObstacle(MAC)
             SizeOb = size(MAC.ObPosGlo);
@@ -344,15 +386,8 @@ classdef CAS004< Computer
             MAC.Decision = [0;0;0; 0;0;0];
         end
         function DeConfAvoid(MAC)
-            %DECision is trans vel and rot Vel??
-            %or trans acc and rot vel?
-            %or trans vel and new heading? --> new heading actually new pos
-            %thinking control, the input then velocity and HeadinG!
-            %actually, thinking of avoidance plane, should be the angle -->
-            %roll, then heading... and the heading is determined? while the
-            %avoplane is not. but, if we using closed loop, than should be
-            %heaing angle afetr roll. nad not speed? or speed constant.
-            %Controller on Speed, Roll, and Heading?
+            
+
             MAC.Decision = [MAC.DMaVel; 0; 0; ... %because it is body axis...
                             0;0;0];
         end
@@ -369,7 +404,7 @@ classdef CAS004< Computer
             MAC.AttGlo = Attitude;
             
             %initiate type of avoidance?
-            MAC.AvoTy = AvoTy;
+            MAC.AvoTy = AvoTy; 
         end
         
     end

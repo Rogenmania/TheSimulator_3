@@ -54,8 +54,8 @@ UVW_b(:,1) = [VooA;0;0];%+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 UVW_g(:,1) = UVW_b(:,1);
 VTP_g(:,1) = [0;0;0];%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Veeo = 0; %its zero (designated)
-VooElv = -20/180*pi; %on symmteric plane, up 45 degree from the VO base lane
-VooAzz = 0/180*pi;
+VooElv = -70/180*pi; %on symmteric plane, up 45 degree from the VO base lane
+VooAzz = 56/180*pi;
 Voo = [VooA*sin(pi/2-VooElv)*cos(VooAzz); 
        VooA*sin(pi/2-VooElv)*sin(VooAzz);
        VooA*cos(pi/2-VooElv)]; %the equation is for inclination, hence the pi/2 -
@@ -134,7 +134,7 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;%++++++++++++++++++++++++++++++++++++++++++++++++
 %%
 
 %if you want scenario visualization======================================
-%InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
+InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
 
 %%
@@ -158,8 +158,8 @@ for tii = 1:AgentNumber
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
-Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
+%Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
+%Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
 %========================================================================
 
 %save InitCond
