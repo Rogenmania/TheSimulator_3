@@ -142,12 +142,6 @@ InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %dynamic parameter
 NTurnRate = 10/180*pi;
 GoalvPath = 0.001;
-
-ATurnRate = 10/180*pi;
-ADist = 5;
-VOpPo = 0:2*pi/36:2*pi; 
-VOpVee = -pi/2:pi/12:pi/2;
-DecMode =1;
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -156,7 +150,7 @@ for tii = 1:AgentNumber
     GPSP(tii).SetInit(XYZ_g(:,tii));
     %CASManager?
     GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],NTurnRate,GoalvPath);
-    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],ATurnRate,ADist,VOpPo,VOpVee,DecMode);
+    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],0,0);
     
     RecXYZ_g(tii).AddRecord(Agent(tii).GloPos)
     RecXYZ_g(tii).AddRecord2(XYZfin_g(:,tii))

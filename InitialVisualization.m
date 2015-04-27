@@ -15,7 +15,7 @@ YVOB = R2Bod0(2,1)*XVO+R2Bod0(2,2)*YVO+R2Bod0(2,3)*ZVO;
 ZVOB = R2Bod0(3,1)*XVO+R2Bod0(3,2)*YVO+R2Bod0(3,3)*ZVO;
 %VISUALIZATION  =======================================================
 figure(1)
-set(gca,'ZDir','reverse');
+set(gca,'ZDir','reverse','YDir','reverse');
 vObs1 = surf(XObs, YObs, ZObs,'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 vDist =line([0 ObsPos(1)],[0 ObsPos(2)],[0 ObsPos(3)],'linewidth',1,'linestyle','-.','color','k'); 
 vVoo = line([0 Voo(1)],[0 Voo(2)],[0 Voo(3)],'linewidth',1,'Marker','d');
@@ -26,7 +26,7 @@ hold on; axis equal; axis([0 Dist+Rsep -2*Rsep 2*Rsep -2*Rsep 2*Rsep]);
 vVO1 = surf(XVO, YVO, ZVO,'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 
 figure(2)
-set(gca,'ZDir','reverse');
+set(gca,'ZDir','reverse','YDir','reverse');
 hold on; grid on; axis equal
 vObsB = surf(XObsB, YObsB, ZObsB,'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 vDistB =line([0 ObsPosB(1)],[0 ObsPosB(2)],[0 ObsPosB(3)],'linewidth',1,'linestyle','-.','color','k'); 
@@ -37,7 +37,7 @@ vRelVB = line([0 RelVelB(1)],[0 RelVelB(2)],[0 RelVelB(3)],'linewidth',2,'Marker
 vVO1B = surf(XVOB, YVOB, ZVOB,'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 
 figure(3)
-set(gca,'ZDir','reverse');
+set(gca,'ZDir','reverse','YDir','reverse');
 hold on; grid on; axis equal
 vObsV = surf(XObsB+VioB(1), YObsB+VioB(2), ZObsB+VioB(3),'FaceColor','k','FaceAlpha',0.2,'EdgeColor','c','EdgeAlpha',0.5);
 vDistV =line([0 ObsPosB(1)],[0 ObsPosB(2)],[0 ObsPosB(3)],'linewidth',1,'linestyle','-.','color','k'); 
