@@ -27,8 +27,8 @@ classdef GCS001 < Computer
                                    
             %The TGoVel need to head to goal when it is on the path, but also to go as soon to the path when it is not on the path.
             %meaning more to eliminate drift then going to goal? --> MAC.TGvTP
-            if DistToGoal < 0.0001 && MAC.DriftAvo(1) < 0.0001
-               MAC.TGoVel = MAC.VelGlo;
+            if DistToGoal < 0.0001 || MAC.DriftAvo(1) < 0.0001
+               MAC.TGoVel = MAC.VelBo;
             else
                MAC.TGoVel = MAC.DMaVel*(MAC.TGvTP*ToGoal+ToPath)/((sum((MAC.TGvTP*ToGoal+ToPath).^2))^0.5);
             end
@@ -46,27 +46,34 @@ classdef GCS001 < Computer
                 AVoPl = acos((dot(NAvoPlTGoVel,[0; 0; 1]))/((sum((NAvoPlTGoVel).^2))^0.5)); %remember unit vector
                 % the angle will always be the smallest. Hence, another step is
                 % required to differentiate e.g. 45 deg and -45 deg (currently both read as 45)
+                
+                
                 AVoPl = sign(NAvoPlTGoVel(2))*AVoPl;
             end
             
-            if AVoPl > pi/2 %just to limit, but seems not possible
+            if AVoPl > pi/2 %just to limit, 
                 AVoPl = AVoPl-pi;
-            elseif AVoPl < -pi/2 % also not possible. the result will always positive
+            elseif AVoPl < -pi/2 
                 AVoPl = AVoPl+pi;
             end
+            
+            AVoPl = (MAC.AttGlo(1) - AVoPl);
+
             
             RollCom = AVoPl;
             PitchCom = 0; %Current Pitch
             YawCom = acos(dot([1; 0; 0],MAC.TGoVel)/((sum(MAC.TGoVel.^2))^0.5)); %scalar!
-            YawCom = sign(-MAC.TGoVel(2))*YawCom; %the direction of yawing --> neg is mistery
+            YawCom = -sign(MAC.TGoVel(2))*YawCom; %the direction of yawing --> neg is mistery
             %suppose that the tunrrate --> MAC.TGTurnR8, is for the angle is the turning of the bod velocity arm. 
             MatCom = MAC.RotMat([RollCom; PitchCom; YawCom*MAC.TGTurnR8],3);
             
             VelDecGloTi = MAC.MatB2E*MatCom*MAC.VelBo - MAC.VelGlo;          %^turning the VelGlo on decided VTP, then derived the difference
             AngDecGloTi = MAC.Vect2Angls(MAC.MatB2E*MatCom*MAC.VelBo)- MAC.AttGlo;%MAC.Vect2Angls(MAC.VelGlo); %angle in global axis
+            
             AngDecGloTi = [RollCom; AngDecGloTi(2); AngDecGloTi(3)]; % the roll added since MAC.Vect2Angls does not take account roll
-           
-            MAC.Decision(:,1) = [VelDecGloTi; AngDecGloTi];
+           %input is difference in global?
+            %MAC.Decision(:,1) = [VelDecGloTi; AngDecGloTi];
+            MAC.Decision(:,1) = [0; 0; 0; RollCom; PitchCom; 10*YawCom*MAC.TGTurnR8];
             %Aaa = MAC.Decision.*[1;1;1;57.3;57.3;57.3];
             %MAC.Decision(:,1) = [0;0;0; 0;0;0];
         end

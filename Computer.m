@@ -60,6 +60,7 @@ classdef Computer < handle
             %MAC.AttGlo = atan2(SensGVel(2),SensGVel(1));
             MAC.VelBo = SensVel;%Vxb, Vyb, Vzb
             MAC.AttWi = SensAtt;
+            MAC.AttGlo = SensAtt;
             MAC.CalcSensor()
             
             %Obstacles State
@@ -72,8 +73,6 @@ classdef Computer < handle
         end
         function CalcSensor(MAC)
             %Calculate Heading 3D, from ObVelGlo ?
-            
-            MAC.AttGlo = MAC.Vect2Angls(MAC.VelGlo);
             
             %Global to Body Rotational Matrix 
             %earth to Body, just turn backwards... 
@@ -367,6 +366,23 @@ classdef Computer < handle
         function Angl = Vect2Angls(Vect)
             %without-roll!
             Angl = [0; -atan2(Vect(3),((Vect(2)^2+Vect(1)^2)^0.5)); atan2(Vect(2),Vect(1))];
+            %pitch between -180 - 180
+            while Angl(2) > pi || Angl(2) < -pi
+                if Angl(2) > pi
+                    Angl(2) = Angl(2)-2*pi;
+                elseif Angl(2) < -pi
+                    Angl(2) = Angl(2)+2*pi;
+                end
+            end
+            %yaw between -180 - 180
+            while Angl(3) > pi || Angl(3) < -pi
+                if Angl(3) > pi
+                    Angl(3) = Angl(3)-2*pi;
+                elseif Angl(3) < -pi
+                    Angl(3) =Angl(3)+2*pi;
+                end
+            end
+            
             %Angl2 = [0; 0; atan2(Vect(2),Vect(1))];
         end
             

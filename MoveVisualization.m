@@ -94,10 +94,10 @@ for sii = 1:DatNum
                       
         
     end
-    disp(num2str(VTP_g(2,:,sii)*57.3))
-    disp(num2str(XYZ_g(2,:,sii)*57.3))
-    disp(num2str(UVW_g(2,:,sii)*57.3))
-    pause(0.2)
+    disp(num2str(VTP_g(1,:,sii)*57.3))
+    %disp(num2str(XYZ_g(2,:,sii)*57.3))
+    %disp(num2str(UVW_g(2,:,sii)*57.3))
+    pause(0.01)
 end
 
 %========================================================================

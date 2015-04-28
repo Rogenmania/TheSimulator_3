@@ -32,10 +32,10 @@ classdef UAV < handle
             UAVC.GloPos = iGPOS;         %Global Position
             UAVC.GloAtti = iGATT;
             UAVC.GloAtt = iGATT;
-            RotMatP = [cos(iGATT(3)) sin(iGATT(3)) 0; -sin(iGATT(3)) cos(iGATT(3)) 0 ; 0 0 1]; %3D turning to heading
-            RotMatT = [cos(iGATT(2)) 0 -sin(iGATT(2)); 0 1 0; sin(iGATT(2)) 0 cos(iGATT(2))];
-            RotMatV = [1 0 0; 0 cos(iGATT(1)) sin(iGATT(1)); 0 -sin(iGATT(1)) cos(iGATT(1))];
-            MatB2E = RotMatV*RotMatT*RotMatP;
+            RotMatP = [cos(-UAVC.GloAtt(3)) sin(-UAVC.GloAtt(3)) 0; -sin(-UAVC.GloAtt(3)) cos(-UAVC.GloAtt(3)) 0 ; 0 0 1]; %3D turning to heading
+            RotMatT = [cos(-UAVC.GloAtt(2)) 0 -sin(-UAVC.GloAtt(2)); 0 1 0; sin(-UAVC.GloAtt(2)) 0 cos(-UAVC.GloAtt(2))];
+            RotMatV = [1 0 0; 0 cos(-UAVC.GloAtt(1)) sin(-UAVC.GloAtt(1)); 0 -sin(-UAVC.GloAtt(1)) cos(-UAVC.GloAtt(1))];
+            MatB2E = RotMatP*RotMatT*RotMatV;
             UAVC.GloVel = MatB2E*iBVEL;
             UAVC.BodVel = iBVEL;
         end
@@ -63,19 +63,64 @@ classdef UAV < handle
         end
         function MoveTimeD_3(UAVC,TiSt)%A threeD movement, but linear
             %first roll?
+            RotMatP = [cos(-UAVC.GloAtt(3)) sin(-UAVC.GloAtt(3)) 0; -sin(-UAVC.GloAtt(3)) cos(-UAVC.GloAtt(3)) 0 ; 0 0 1]; %3D turning to heading
+            RotMatT = [cos(-UAVC.GloAtt(2)) 0 -sin(-UAVC.GloAtt(2)); 0 1 0; sin(-UAVC.GloAtt(2)) 0 cos(-UAVC.GloAtt(2))];
+            RotMatV = [1 0 0; 0 cos(-UAVC.GloAtt(1)) sin(-UAVC.GloAtt(1)); 0 -sin(-UAVC.GloAtt(1)) cos(-UAVC.GloAtt(1))];
+            MatB2E = RotMatP*RotMatT*RotMatV;
 
             RolTi = UAVC.InputDA(1);
             PitTi = UAVC.InputDA(2); 
             YawTi = UAVC.InputDA(3); 
-            
-            
+
             UuTi = UAVC.InputDV(1);
             VvTi = UAVC.InputDV(2);
             WwTi = UAVC.InputDV(3);
             
-            UAVC.GloVel= UAVC.GloVel+UAVC.InputDV;
+            %turn roll in instant, yaw slowly. Vel diff is not used, but
+            %consequences
+            %turning rtae gain = 1, depend on the input diff
+             %UAVC.GloAtt = UAVC.GloAtt + UAVC.InputDA.*[0;1;TiSt];
+             
+             %turn the vel as consequences
+             RMatP = [cos(UAVC.InputDA(3)*TiSt) sin(UAVC.InputDA(3)*TiSt) 0;
+                   -sin(UAVC.InputDA(3)*TiSt) cos(UAVC.InputDA(3)*TiSt) 0; 
+                   0 0 1];
+             RMatT = [cos(UAVC.InputDA(2)) 0 -sin(UAVC.InputDA(2));
+                      0 1 0;
+                      sin(UAVC.InputDA(2)) 0 cos(UAVC.InputDA(2))];  
+             RMatV = [1 0 0;
+                      0  cos(UAVC.InputDA(1)) sin(UAVC.InputDA(1));
+                      0 -sin(UAVC.InputDA(1)) cos(UAVC.InputDA(1))];
+             eGloVel = MatB2E*RMatV*RMatT*RMatP*UAVC.BodVel;
+             deGloVel = eGloVel-UAVC.GloVel;
+             eGloAng = [0;
+                       -atan2(eGloVel(3),((eGloVel(2)^2+eGloVel(1)^2)^0.5)); 
+                        atan2(eGloVel(2),eGloVel(1))];
+              
+                    
+             deGloAng = eGloAng-UAVC.GloAtt;
+             
+             UAVC.GloVel= UAVC.GloVel + deGloVel;
+             UAVC.GloAtt = UAVC.GloAtt + [UAVC.InputDA(1); deGloAng(2); deGloAng(3)]; 
+             
+             for ii = 1:3
+                 while UAVC.GloAtt(ii) > pi || UAVC.GloAtt(ii) < -pi
+                     if UAVC.GloAtt(ii) > pi
+                         UAVC.GloAtt(ii) = UAVC.GloAtt(ii)-2*pi;
+                     elseif UAVC.GloAtt(ii) < -pi
+                         UAVC.GloAtt(ii) = UAVC.GloAtt(ii)+2*pi;
+                     end
+                 end
+             end
+             
+             
+             Aaa = UAVC.GloAtt*57.3
+
+            
+            
+            %UAVC.GloVel= UAVC.GloVel+UAVC.InputDV;
             UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
-            UAVC.GloAtt = UAVC.GloAtt + UAVC.InputDA;
+            %UAVC.GloAtt = UAVC.GloAtt + UAVC.InputDA;
             
             %reach or put these input to zero by turning? So InoputDA -
             %will control the turn in three axis, but how abot trolling

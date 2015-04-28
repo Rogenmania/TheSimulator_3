@@ -8,7 +8,7 @@ classdef CAS004< Computer
         Multiple
         Priorities
         Rule = 1
-        CASFlag = zeros(3,51)
+        CASFlag = zeros(4,51)
         VOFlag = 0
         
         SepRad
@@ -112,10 +112,39 @@ classdef CAS004< Computer
            VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....             
            VOAvoPlane(MAC);
            
+           MAC.CASFlag(4,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
+           MAC.CASFlag(4,1) = sum(MAC.CASFlag(4,2:MAC.NumObs+1));
+           Aaa = MAC.CASFlag(1,1:MAC.NumObs+1);
+           Aaa = MAC.CASFlag(3,1:MAC.NumObs+1);
+           Aaa = MAC.CASFlag(4,1:MAC.NumObs+1);
+
            switch MAC.DecMode
                case 1 %default, go to closest CW (as in RoW)
+                   %MAC.CASFlag % imminence and inclusion. also which zone, but probably not used here.
+                   %MAC.TiVOBp  % points on BVO
+                   %MAC.VOpVee  % considered avoidance planes
                    
-               case 2 %default, go to closest CCW
+                   %MAC.VOPv(4,kk,oo,ii) %no 4, angle of points of VOp
+                   %MAC.VOpNum(oo,ii) %number of VOp points
+                   %MAC.VOpInt(mm,oo,ii) %index of intersecting point of VOp
+                   %MAC.VOpNumInt(oo,ii) %number of intersecting point
+                   
+                   for ii = find(MAC.CASFlag(4,2:MAC.NumObs+1)>0) %for all imminent AND inclusing(conflicting) obstacles?
+                       %compare the neg angle result?
+                       for oo = 1:length(MAC.VOpVee) %testing every avoPl  
+                           for kk = MAC.VOpInt(:,oo,ii) %only the escaping point
+                               if MAC.VOPv(4,kk,oo,ii) <= 0 && MAC.VOPv(4,kk,oo,ii) < AngEsc %neg angle
+                                   AngAvoBod = MAC.VOPv(4,kk,oo,ii);
+                                   AVoPl = MAC.VOpVee(oo);
+                               end
+                           end
+                       end
+                   end
+
+                   MagAvoBod = MAC.VelBo(1);
+                   MAC.Decision(:,1) = [VelDecGloTi; [AVoPl; 0; AngAvoBod]];
+                   
+               case 2 %, go to closest CCW
                    
                case 3 %go to the closest, either CW/CCW
                    
@@ -244,8 +273,8 @@ classdef CAS004< Computer
                 end
             end
             %below is the summary?
-            MAC.CASFlag(1,1) = max(MAC.CASFlag(1,2:MAC.NumObs+1));
-            MAC.CASFlag(2,1) = max(MAC.CASFlag(2,2:MAC.NumObs+1));
+            MAC.CASFlag(1,1) = sum(MAC.CASFlag(1,2:MAC.NumObs+1)); %imminence, and the number of imminence obs
+            MAC.CASFlag(2,1) = max(MAC.CASFlag(2,2:MAC.NumObs+1)); %which zone (always the closest)
         end     
         
         function VelocityObstacle3D(MAC)
@@ -267,13 +296,12 @@ classdef CAS004< Computer
                   ((MAC.VOVRel(2,ii)^2+MAC.VOVRel(3,ii)^2)^0.5)/(MAC.VOVRel(1,ii)) < (MAC.VORad(ii))/(MAC.VODis(ii))
                   %just use the third CASFlag
                   MAC.CASFlag(3,ii+1) = 1;
-                  MAC.CASFlag(3,1) = max(MAC.CASFlag(3,2:MAC.NumObs+1));
                 else
                   MAC.CASFlag(3,ii+1) = 0;
-                  MAC.CASFlag(3,1) = max(MAC.CASFlag(3,2:MAC.NumObs+1));  
+                    
                 end
 
-                %Now for each obstacle, we ar going to define the A and B
+                %Now for each obstacle, we are going to define the A and B
                 MAC.VOAp(:,ii) =  MAC.ObVelBod(:,ii);
                 MAC.TiVOBp = 0:2*pi/36:2*pi;
                 for jj = 1:length(MAC.TiVOBp); %this is the t of the circle
@@ -291,6 +319,7 @@ classdef CAS004< Computer
                     %stopppp
                 end
              end
+             MAC.CASFlag(3,1) = sum(MAC.CASFlag(3,2:MAC.NumObs+1)); %and the number of inclusion
         end
         
         function VOAvoPlane(MAC)
@@ -375,13 +404,7 @@ classdef CAS004< Computer
                             stopppp
                         end
                     end
-                    
                 end
-                
-                
-                
-                
-                
             end
                       
             
@@ -507,7 +530,6 @@ classdef CAS004< Computer
         end
         function DeConfAvoid(MAC)
             
-
             MAC.Decision = [MAC.DMaVel; 0; 0; ... %because it is body axis...
                             0;0;0];
         end

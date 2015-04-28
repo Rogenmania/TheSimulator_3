@@ -10,7 +10,7 @@ clear all; clc; close all;
 %Making the world.... making the object==================================
 AgentNumber = 2;
 tSimTiR = 10; %Recording Alocation
-tTiStR = 0.1; %Recording Save
+tTiStR = 0.01; %Recording Save
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -144,7 +144,7 @@ NTurnRate = 10/180*pi;
 GoalvPath = 0.001;
 
 ATurnRate = 10/180*pi;
-ADist = 5;
+ADist = 20;
 VOpPo = 0:2*pi/36:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
 DecMode =1;
@@ -164,8 +164,8 @@ for tii = 1:AgentNumber
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-%Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
-%Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
+Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
+Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
 %========================================================================
 
 %save InitCond
@@ -207,7 +207,7 @@ while ElaTi < TimeEnd
         %Avoidance Computer
         GCS(ii).GCSRun()                                                   %GCS Computer analyzing and deciding
         %CAS(ii).ReadGCS(GCS(ii).TGoVel)                                    %CAS Computer read data from GCS and set info for GCS
-        CAS(ii).ACASRun()                                                  %CAS Computer analyzing and deciding
+        %CAS(ii).ACASRun()                                                  %CAS Computer analyzing and deciding
         
         %GCS(ii).ReadCAS(CAS(ii).CASFlag,CAS(ii).Decision,CAS(ii).Interupt) %GCS Computer read data and interupt from CAS
 
