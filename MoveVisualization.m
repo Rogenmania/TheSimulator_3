@@ -9,10 +9,12 @@ for ii = 1:AgentNumber
             XYZ_g(ii,kk,jj) = RecXYZ_g(ii).Data(kk,jj);
             UVW_g(ii,kk,jj) = RecUVW_g(ii).Data(kk,jj);
             VTP_g(ii,kk,jj) = RecVTP_g(ii).Data(kk,jj);
+            ODist(ii,jj) = RecODist(ii).Data(1,jj);
         end
     end
     XYZ_start(:,ii) = RecXYZ_g(ii).Data2(:,2);
     XYZ_goal(:,ii) = RecXYZ_g(ii).Data2(:,1);
+    
 end
 DatNum = length(RecUVW_g(1).Data)-1;
 VTP_g(2,:,1)
@@ -97,10 +99,14 @@ for sii = 1:DatNum
     end
     disp(num2str(VTP_g(1,:,sii)*57.3))
     Rola(sii) = VTP_g(1,1,sii)*57.3;
+    Roli(sii) = ODist(1,sii);
     %disp(num2str(XYZ_g(2,:,sii)*57.3))
     %disp(num2str(UVW_g(2,:,sii)*57.3))
     pause(0.01)
 end
 figure(13)
 plot(Rola)
+
+figure(14)
+plot(Roli); grid on;
 %========================================================================
