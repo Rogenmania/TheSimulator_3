@@ -72,8 +72,8 @@ classdef UAV < handle
             UAVC.GloVel = MatB2E*UAVC.BodVel;
             
             UAVC.GloAtt = [0;
-                          -atan2(UAVC.GloVel(3),((UAVC.GloVel(2)^2+UAVC.GloVel(1)^2)^0.5)); 
-                           atan2(UAVC.GloVel(2),UAVC.GloVel(1))];
+                          -atan(UAVC.GloVel(3)/((UAVC.GloVel(2)^2+UAVC.GloVel(1)^2)^0.5)); 
+                           atan(UAVC.GloVel(2)/UAVC.GloVel(1))];
             
             UAVC.GloPos = UAVC.GloPos + UAVC.GloVel*TiSt;
         end

@@ -11,7 +11,6 @@ for ii = 1:AgentNumber
             VTP_g(ii,kk,jj) = RecVTP_g(ii).Data(kk,jj);
         end
     end
-    XYZ_start(:,ii) = RecXYZ_g(ii).Data2(:,2);
     XYZ_goal(:,ii) = RecXYZ_g(ii).Data2(:,1);
 end
 DatNum = length(RecUVW_g(1).Data)-1;
@@ -58,9 +57,9 @@ for tii = 1:AgentNumber
     vAgeHead(tii)=surf(XVO1+XYZ_g(tii,1,1), YVO1+XYZ_g(tii,2,1), ZVO1+XYZ_g(tii,3,1),... %making heading indicator
                  'FaceColor','b','FaceAlpha',0.2,'EdgeColor','k','EdgeAlpha',0.2);
              
-    InitDir(tii) = line([XYZ_start(1,tii) XYZ_goal(1,tii)],...
-                        [XYZ_start(2,tii) XYZ_goal(2,tii)],...
-                        [XYZ_start(3,tii) XYZ_goal(3,tii)]);
+    InitDir(tii) = line([XYZ_g(tii,1,1) XYZ_goal(1,tii)],...
+                        [XYZ_g(tii,2,1) XYZ_goal(2,tii)],...
+                        [XYZ_g(tii,3,1) XYZ_goal(3,tii)]);
     InitDir2(tii) = line([XYZ_g(tii,1,1) XYZ_g(tii,1,1)+10*UVW_g(tii,1,1)],...
                         [XYZ_g(tii,2,1) XYZ_g(tii,2,1)+10*UVW_g(tii,2,1)],...
                         [XYZ_g(tii,3,1) XYZ_g(tii,3,1)+10*UVW_g(tii,3,1)],'color','r');
@@ -96,11 +95,10 @@ for sii = 1:DatNum
         
     end
     disp(num2str(VTP_g(1,:,sii)*57.3))
-    Rola(sii) = VTP_g(1,1,sii)*57.3;
+    Aaa = VTP_g(1,:,sii)*57.3)
     %disp(num2str(XYZ_g(2,:,sii)*57.3))
     %disp(num2str(UVW_g(2,:,sii)*57.3))
     pause(0.01)
 end
-figure(13)
-plot(Rola)
+plot(VTP_g(1,1,:)*57.3)
 %========================================================================

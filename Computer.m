@@ -367,21 +367,21 @@ classdef Computer < handle
             %without-roll!
             Angl = [0; -atan2(Vect(3),((Vect(2)^2+Vect(1)^2)^0.5)); atan2(Vect(2),Vect(1))];
             %pitch between -180 - 180
-            while Angl(2) > pi || Angl(2) < -pi
-                if Angl(2) > pi
-                    Angl(2) = Angl(2)-2*pi;
-                elseif Angl(2) < -pi
-                    Angl(2) = Angl(2)+2*pi;
-                end
-            end
-            %yaw between -180 - 180
-            while Angl(3) > pi || Angl(3) < -pi
-                if Angl(3) > pi
-                    Angl(3) = Angl(3)-2*pi;
-                elseif Angl(3) < -pi
-                    Angl(3) =Angl(3)+2*pi;
-                end
-            end
+%             while Angl(2) > pi || Angl(2) < -pi
+%                 if Angl(2) > pi
+%                     Angl(2) = Angl(2)-2*pi;
+%                 elseif Angl(2) < -pi
+%                     Angl(2) = Angl(2)+2*pi;
+%                 end
+%             end
+%             %yaw between -180 - 180
+%             while Angl(3) > pi || Angl(3) < -pi
+%                 if Angl(3) > pi
+%                     Angl(3) = Angl(3)-2*pi;
+%                 elseif Angl(3) < -pi
+%                     Angl(3) =Angl(3)+2*pi;
+%                 end
+%             end
             
             %Angl2 = [0; 0; atan2(Vect(2),Vect(1))];
         end

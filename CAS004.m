@@ -117,6 +117,9 @@ classdef CAS004< Computer
            Aaa = MAC.CASFlag(1,1:MAC.NumObs+1);
            Aaa = MAC.CASFlag(3,1:MAC.NumObs+1);
            Aaa = MAC.CASFlag(4,1:MAC.NumObs+1);
+           AVoPl = 0;
+           AngAvoBod = 0;
+           AngEsc = 0;
 
            switch MAC.DecMode
                case 1 %default, go to closest CW (as in RoW)
@@ -131,9 +134,10 @@ classdef CAS004< Computer
                    
                    for ii = find(MAC.CASFlag(4,2:MAC.NumObs+1)>0) %for all imminent AND inclusing(conflicting) obstacles?
                        %compare the neg angle result?
-                       for oo = 1:length(MAC.VOpVee) %testing every avoPl  
-                           for kk = MAC.VOpInt(:,oo,ii) %only the escaping point
-                               if MAC.VOPv(4,kk,oo,ii) <= 0 && MAC.VOPv(4,kk,oo,ii) < AngEsc %neg angle
+                       for oo = 1:length(MAC.VOpVee) %testing every avoPl 
+                           for kk = 1:MAC.VOpNumInt(oo,ii) %only the escaping point
+                               if MAC.VOPv(4,MAC.VOpInt(kk,oo,ii),oo,ii) <= 0 && ...
+                                  MAC.VOPv(4,MAC.VOpInt(kk,oo,ii),oo,ii) < AngEsc %neg angle
                                    AngAvoBod = MAC.VOPv(4,kk,oo,ii);
                                    AVoPl = MAC.VOpVee(oo);
                                end
@@ -142,7 +146,7 @@ classdef CAS004< Computer
                    end
 
                    MagAvoBod = MAC.VelBo(1);
-                   MAC.Decision(:,1) = [VelDecGloTi; [AVoPl; 0; AngAvoBod]];
+                   MAC.Decision(:,1) = [0;0;0; [AVoPl; 0; AngAvoBod*0.1]];
                    
                case 2 %, go to closest CCW
                    
@@ -168,49 +172,7 @@ classdef CAS004< Computer
            
            %then, with CASFlag, and MacVoLuDa 
            %according to CASFlag, do nothing, deconf, or aggresive
-           switch MAC.CASFlag(1,1) %for 3D, only use imminence
-               case 0    % not imminent
-                   %what?
-               case 1    % imminent
-                   %according to MacVoLuDa
-                   if sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) > 0 && ...
-                      sum(MAC.VOLuDa(2,:)) > 0 % C and TG -RelVel, even just one
-                       MAC.Bababa = 1;
-                       %make computer read the ACAS
-                       MAC.Interupt = 1;
-                       %turn to right
-                       DeConfAvoid(MAC);
-                   elseif sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) == 0 && ...
-                          sum(MAC.VOLuDa(2,:)) > 0 %TG- Relvel, even just one
-                      MAC.Bababa = 2;
-                      %still read ACAS
-                       MAC.Interupt = 1;
-                      %Keep velocity
-                      KeepVelo(MAC);
-                   elseif sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) > 0 && ...
-                          sum(MAC.VOLuDa(2,:)) == 0 %C- Relvel, even just one
-                      %go to TG?, give it to normal control?
-                      MAC.Bababa = 3;
-                      MAC.Interupt = 1;
-                      KeepVelo(MAC);
-                   elseif sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) == 0 && ...
-                          sum(MAC.VOLuDa(2,:)) == 0 && ...
-                          sum(MAC.DivLuDa(1,:)) > 0 %still, keep speed
-                      MAC.Bababa = 4;
-                      MAC.Interupt = 1;
-                      KeepVelo(MAC);
-                   elseif sum(MAC.VOLuDa(1,:).*MAC.RoW(2:end)) == 0 && ...
-                          sum(MAC.VOLuDa(2,:)) == 0 && ...
-                          sum(MAC.DivLuDa(1,:)) == 0 %none
-                      MAC.Bababa = 40;
-                      MAC.Interupt = 0;
-                       
-                   end
-               %case 3    % escape sphere
-                   
-               otherwise  %do nothing sphere
-
-           end
+           
 
            
         end
@@ -253,7 +215,7 @@ classdef CAS004< Computer
                 for jj = 1:4 %the four radii - TW, Dec, Esc, Pz
                     MAC.SepRad(jj,ii) = MAC.CASDistDat(jj,MAC.Cate,MAC.ObsCats(ii));
                 end
-                
+                MAC.SepRad(jj,ii) = 2;
                 if MAC.ObDist(ii) < MAC.AvoTy
                     MAC.CASFlag(1,ii+1) = 1;  %Imminent
                 else

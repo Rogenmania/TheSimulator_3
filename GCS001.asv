@@ -29,10 +29,9 @@ classdef GCS001 < Computer
                MAC.TGoVel = MAC.DMaVel*(MAC.TGvTP*ToGoal+ToPath)/((sum((MAC.TGvTP*ToGoal+ToPath).^2))^0.5);
             end
             
-            TGoAng = MAC.Vect2Angls(MAC.TGoVel);
+            NewAn
             
-            MAC.Decision(:,1) = [MAC.TGoVel; TGoAng];
-        end
+            MAC.Decision(:,1) = [MAC.TGoVel; 0;0;0];
         function GCSRun_x(MAC)
             %use current position and destination, create flight path,
             %define TGVel... --> from goal (toGoal) and drift from path (ToPath)

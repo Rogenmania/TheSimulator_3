@@ -130,22 +130,21 @@ VTP_g = [0 0;
          0 54.7330-90;
          0 90-45]/180*pi;
 VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
-XYZsta_g = XYZ_g - UVW_g*Tifin/1000;
 XYZfin_g = XYZ_g + UVW_g*Tifin;
 %%
 
 %if you want scenario visualization======================================
-%InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
+InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
 
 %%
 %Puting Init Value into Objects =========================================
 %dynamic parameter
 NTurnRate = 10/180*pi;
-GoalvPath = 0.002;
+GoalvPath = 0.001;
 
 ATurnRate = 10/180*pi;
-ADist = 10;
+ADist = 20;
 VOpPo = 0:2*pi/36:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
 DecMode =1;
@@ -156,18 +155,17 @@ for tii = 1:AgentNumber
     AttSens(tii).SetInit(VTP_g(:,tii));
     GPSP(tii).SetInit(XYZ_g(:,tii));
     %CASManager?
-    GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZsta_g(:,tii) XYZfin_g(:,tii)],NTurnRate,GoalvPath);
-    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZsta_g(:,tii) XYZfin_g(:,tii)],ATurnRate,ADist,VOpPo,VOpVee,DecMode);
+    GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],NTurnRate,GoalvPath);
+    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZ_g(:,tii) XYZfin_g(:,tii)],ATurnRate,ADist,VOpPo,VOpVee,DecMode);
     
     RecXYZ_g(tii).AddRecord(Agent(tii).GloPos)
     RecXYZ_g(tii).AddRecord2(XYZfin_g(:,tii))
-    RecXYZ_g(tii).AddRecord2(XYZsta_g(:,tii))
     RecUVW_g(tii).AddRecord(Agent(tii).GloVel)
     RecVTP_g(tii).AddRecord(Agent(tii).GloAtt)
     %[tii AvoW(tii,1) AvoTy(tii,1)]
 end
-Agent(1).SetInit(XYZ_g(:,1)+[0;2;-5],[2;0;0],VTP_g(:,1))
-Agent(2).SetInit(XYZ_g(:,2)+[0;1;-4],[2;0;0],VTP_g(:,2))
+Agent(1).SetInit(XYZ_g(:,1)+[0;2;2],[2;0;0],VTP_g(:,1))
+Agent(2).SetInit(XYZ_g(:,2)+[0;1;1],[2;0;0],VTP_g(:,2))
 %========================================================================
 
 %save InitCond
@@ -225,7 +223,6 @@ while ElaTi < TimeEnd
         RecXYZ_g(ii).AddRecord(Agent(ii).GloPos)
         
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
-        
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
         if ii == 2
             Aa2 = Agent(ii).GloAtt;
