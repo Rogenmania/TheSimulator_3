@@ -28,7 +28,9 @@ classdef GCS001 < Computer
             else
                MAC.TGoVel = MAC.DMaVel*(MAC.TGvTP*ToGoal+ToPath)/((sum((MAC.TGvTP*ToGoal+ToPath).^2))^0.5);
             end
+            %change the TGoVel to global axis, B2E
             
+            MAC.TGoVel = MAC.MatB2E*MAC.TGoVel;
             TGoAng = MAC.Vect2Angls(MAC.TGoVel);
             
             MAC.Decision(:,1) = [MAC.TGoVel; TGoAng];
@@ -45,7 +47,7 @@ classdef GCS001 < Computer
                                    
             %The TGoVel need to head to goal when it is on the path, but also to go as soon to the path when it is not on the path.
             %meaning more to eliminate drift then going to goal? --> MAC.TGvTP
-            if DistToGoal < 0.001 || MAC.DriftAvo(1) < 0.001
+            if DistToGoal < 0.00001 || MAC.DriftAvo(1) < 0.00001
                MAC.TGoVel = MAC.VelBo;
             else
                MAC.TGoVel = MAC.DMaVel*(MAC.TGvTP*ToGoal+ToPath)/((sum((MAC.TGvTP*ToGoal+ToPath).^2))^0.5);

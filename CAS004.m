@@ -122,11 +122,15 @@ classdef CAS004< Computer
            Aaa = MAC.CASFlag(1,1:MAC.NumObs+1);
            Aaa = MAC.CASFlag(3,1:MAC.NumObs+1);
            Aaa = MAC.CASFlag(4,1:MAC.NumObs+1);
-           AVoPl = 0;
+           AngAvoPl = pi/2;
+           VelAvo = MAC.VelGlo;
            AngAvoBod = 0;
            AngEsc = 0;
+           SelAvoPl = 1;
 
            switch MAC.DecMode
+               case 0
+                   MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; 0; 0]];
                case 1 %default, go to closest CW (as in RoW)
                    %MAC.CASFlag % imminence and inclusion. also which zone, but probably not used here.
                    %MAC.TiVOBp  % points on BVO
@@ -136,27 +140,26 @@ classdef CAS004< Computer
                    %MAC.VOpNum(oo,ii) %number of VOp points
                    %MAC.VOpInt(mm,oo,ii) %index of intersecting point of VOp
                    %MAC.VOpNumInt(oo,ii) %number of intersecting point
+                   %MAC.VOpIntUn(1:12,jj,oo)
                    
-                   %finding the right avoidance plane
-                   if MAC.FiAvoPl == 0
-                       for ii = find(MAC.CASFlag(4,2:MAC.NumObs+1)>0) %for all imminent AND inclusing(conflicting) obstacles?
-                           %compare the neg angle result?
-                           for oo = 1:length(MAC.VOpVee) %testing every avoPl 
-                               for kk = 1:MAC.VOpNumInt(oo,ii) %only the escaping point
-                                   if MAC.VOPv(4,MAC.VOpInt(kk,oo,ii),oo,ii) <= 0 && ...
-                                      MAC.VOPv(4,MAC.VOpInt(kk,oo,ii),oo,ii) < AngEsc %neg angle
-                                       AngAvoBod = [];
-                                       MAC.DecAVoPl = MAC.VOpVee(oo);
-                                   end
+                   %finding the right avoidance plane --> the one with the
+                   %smallest angle to the right of escape (4), with smallest dcc biggest but lower than Vo (3), ?
+                   %hence, the smallest positive (4). actually, only one..
+                   %what if multiplication?
+                   for oo = 1%:length(MAC.VOpVee)
+                       for ii = 1:MAC.VOpIntNumUn(oo)
+                           if MAC.VOpIntUn(4,ii,oo) >= 0
+                               if MAC.VOpIntUn(4,ii,oo) < AngAvoPl
+                                   VelAvo =  [MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
+                                   AngAvoPl =  MAC.VOpIntUn(4,ii,oo);
+                                   SelAvoPl = MAC.VOpVee(oo);
                                end
                            end
                        end
-                       MAC.DecFiAvoPl = 1;
                    end
-
-                   MagAvoBod = MAC.VelBo(1);
-                   VelAvoBod = MAC.RotMat([-AVoPl;0;AngAvoBod*0.008],-3)*MAC.VelBo;
-                   MAC.Decision(:,1) = [VelAvoBod; [AVoPl; 0; AngAvoBod]];
+                   MAC.Decision(:,1) = [VelAvo; [AngAvoPl; 0; 0]]; % its already global velocity
+                   %then dont change the speed nor the AvoPlane before it
+                   %become not imminent.
                    
                case 2 %, go to closest CCW
                    
@@ -173,20 +176,15 @@ classdef CAS004< Computer
            %more efficient. But for the research, better calculate all time
            if MAC.CASFlag(1,1)  == 1 && MAC.CASFlag(3,1) == 1 %Imminent and inside VO (DIV?)
               MAC.Interupt = 1; 
+              Aaa = [VelAvo; [AngAvoPl; 0; 0]]
+              MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; 0]];
            elseif MAC.CASFlag(1,1)  == 1 %&& MAC.CASFlag(3,1) ~= 1
               MAC.Interupt = 1;
-              MAC.Decision(:,1) = [MAC.VelBo; [AVoPl; 0; AngAvoBod]];
+              MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]];
            else
               MAC.Interupt = 0; 
            end
-           
-           %Base on those information, decide!
-           
-           %then, with CASFlag, and MacVoLuDa 
-           %according to CASFlag, do nothing, deconf, or aggresive
-           
 
-           
         end
         function ObsStateCalc(MAC)
             %Distance, Velocity and Position of Obstacle, in OwnAircraft
@@ -269,7 +267,12 @@ classdef CAS004< Computer
                 else
                     MAC.VOBAng(ii) = sign(MAC.VORad(ii))*pi/2;
                 end
-                %f
+                
+                %forget the obstacle if its is too close.. --> collide
+                if MAC.ObDist(ii) < MAC.SepRad(4,ii)
+                    break;
+                end
+                
                 %turning the RelVels to negate the ObsAng
                 MAC.VOVRel(:,ii) = MAC.RotMat(MAC.ObAngBod(:,ii),3)*MAC.RelVelBod(:,ii);
                 %determining the inclusion
@@ -290,7 +293,8 @@ classdef CAS004< Computer
                     MAC.VOBp(:,jj,ii) = Rota*[MAC.VODis(ii);MAC.VORad(ii)*cos(MAC.TiVOBp(jj));MAC.VORad(ii)*sin(MAC.TiVOBp(jj))] + MAC.VOAp(:,ii);
                 end
                 
-                chch = 1;
+                
+                chch = 0;
                 if chch > 0
                     figure(15)
                     VOA = MAC.VOAp;
@@ -299,13 +303,12 @@ classdef CAS004< Computer
                           [VOA(2,ii) VOB(2,1:round(end/4),ii) VOA(2,ii) VOB(2,round(end/4):round(end/2),ii) VOA(2,ii) VOB(2,round(end/2):round(3*end/4),ii) VOA(2,ii) VOB(2,round(3*end/4):end,ii)],...
                           [VOA(3,ii) VOB(3,1:round(end/4),ii) VOA(3,ii) VOB(3,round(end/4):round(end/2),ii) VOA(3,ii) VOB(3,round(end/2):round(3*end/4),ii) VOA(3,ii) VOB(3,round(3*end/4):end,ii)]); grid on; axis equal;
                     %stopppp
-                    hold on;
+                    %hold on;
                 end
              end
              MAC.CASFlag(3,1) = sum(MAC.CASFlag(3,2:MAC.NumObs+1)); %and the number of inclusion
         end
         
-      
         function VOAvoPlane(MAC)
             %actually only need to run if it is included in the VO3D and imminent....
             %it need to combined all points from all obstacles.
@@ -320,6 +323,10 @@ classdef CAS004< Computer
                     
                     for pp = 1:length(MAC.TiVOBp)
                         VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
+                        
+                        if isreal(VOBpVee(:,pp)) == 0 
+                           sdgvsdv
+                        end
                     end
 
                     %for every point (t), jj. But remember, not all t result in
@@ -333,6 +340,9 @@ classdef CAS004< Computer
                     if abs(VOApVee(3)) > 0.0000001 %not degenerate case
                         for jj = 1:length(MAC.TiVOBp)
                             TiVOGl =VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
+                            if isreal(TiVOGl) == 0
+                                ghjfrtgj
+                            end
                             if TiVOGl > 0 || TiVOGl < 1 %elminating the hyperbolic or point beyond dvo
                                 MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
                                 MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
@@ -364,8 +374,7 @@ classdef CAS004< Computer
                             kk = (length(MAC.TiVOBp)-1)/2;
                             HalfPo = (length(MAC.TiVOBp)-1)/2;
                         end
-                        
-                        zz = 1;
+
                         for jj = 1:length(MAC.TiVOBp)
                             if jj == length(MAC.TiVOBp) %the end point
                                jjj = 1; 
@@ -377,19 +386,11 @@ classdef CAS004< Computer
                                 TiVOGl = VOBpVee(3,jjj)/(VOBpVee(3,jj)-VOBpVee(3,jjj));
                                 MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOBpVee(1,jjj))*TiVOGl+VOBpVee(1,jjj);
                                 MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOBpVee(2,jjj))*TiVOGl+VOBpVee(2,jjj);
-                                Aa =MAC.VOPv(1,kk,oo,ii);
-                                Bb =MAC.VOPv(2,kk,oo,ii);
-                                Cc = (VOBpVee(3,jj)-VOBpVee(3,jjj));
-                                Dd = TiVOGl;
                                 kk = kk+1;
-                                zz = zz+1;
                             elseif VOBpVee(3,jj) == 0
                                 MAC.VOPv(1,kk,oo,ii) = VOBpVee(1,jj);
                                 MAC.VOPv(2,kk,oo,ii) = VOBpVee(2,jj);
-                                Aa =MAC.VOPv(1,kk,oo,ii);
-                                Bb =MAC.VOPv(2,kk,oo,ii);
                                 kk = kk+1;
-                                zz = zz+1;
                             end
                         end
 
@@ -407,20 +408,20 @@ classdef CAS004< Computer
 
                         end
                         MAC.VOpNum(oo,ii) = HalfPo*2-1;
-                        chck = 1;
+                        chck = 0;
                         if chck > 0
                             figure(5)
                             plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)); hold on;
                             plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'or','MarkerSize',10)
                             plot(MAC.VOPv(1,HalfPo,oo,ii),MAC.VOPv(2,HalfPo,oo,ii),'ob','MarkerSize',10)
                             plot(MAC.VOPv(1,HalfPo+1,oo,ii),MAC.VOPv(2,HalfPo+1,oo,ii),'og','MarkerSize',10)
-                            plot(MAC.VOPv(1,MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,HalfPo*2-1,oo,ii),'om','MarkerSize',10)
-                            
+                            plot(MAC.VOPv(1,MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,HalfPo*2-1,oo,ii),'om','MarkerSize',10)  
                         end
                         
                         for pp = 1:HalfPo*2-1
                             MAC.VOPv(3,pp,oo,ii) = (MAC.VOPv(1,pp,oo,ii)^2+MAC.VOPv(2,pp,oo,ii)^2)^0.5; %Polar magnitude
                             if abs(MAC.VOPv(1,pp,oo,ii)) > 0
+                                aaa  = MAC.VOPv(2,pp,oo,ii)/MAC.VOPv(1,pp,oo,ii);
                                 MAC.VOPv(4,pp,oo,ii) = atan2(MAC.VOPv(2,pp,oo,ii),MAC.VOPv(1,pp,oo,ii)); %Polar angle
                             else
                                 MAC.VOPv(4,pp,oo,ii) = sign(MAC.VOPv(2,pp,oo,ii))*pi/2;
@@ -428,7 +429,6 @@ classdef CAS004< Computer
                         end
     
                     end
-                    
 
                     mm = 1;
                     for ll = 1:MAC.VOpNum(oo,ii)                
@@ -438,8 +438,6 @@ classdef CAS004< Computer
                         %cases of intersection point. Two point is recorded
                         %if (VOp(t)-Vo)*(VOp(t+1)-Vo) < 0 only one is
                         %negative
-                        %what if the result just 0, 1 2 or more? ==> need
-                        %to handle every case, esp the 0.
                         if ll == MAC.VOpNum(oo,ii)
                             lll = 1;
                         else
@@ -461,15 +459,14 @@ classdef CAS004< Computer
             for oo = 1:length(MAC.VOpVee)
                 nn = 1;
                 for ii = 1:MAC.NumObs
-                    for jj = 1:MAC.NumObs
-                        if ii ~= jj
-                            %test ii point to jj polygon % angle should be
-                            %enough. test the closest angle with the point
-                            %(two closest) if existed, count. if not,
-                            %should be outside!
-                            %MAC.VOpInt(:,oo,ii)
-                            %MAC.VOPv(1,kk,oo,ii)
-                            for mm = 1:MAC.VOpNumInt(oo,ii) %with the list of esc point
+                    for mm = 1:MAC.VOpNumInt(oo,ii) %with the list of esc point
+                        forget = 0;
+                        for jj = 1:MAC.NumObs %trying the point with jj polygon
+                            if ii ~= jj
+                                %test ii point to jj polygon % angle should be
+                                %enough. test the closest angle with the point
+                                %(two closest) if existed, count. if not,
+                                %should be outside!)
                                 InOut = 0;
                                 for kk = 1:MAC.VOpNum(oo,jj)
                                     if kk == MAC.VOpNum(oo,jj) %last point
@@ -486,37 +483,49 @@ classdef CAS004< Computer
                                         if XInt <= MAC.VOPv(1,MAC.VOpInt(mm,oo,ii),oo,ii)
                                             InOut = InOut+1;
                                         end
-                                    end
-                                    
+                                    end 
                                 end
-                                if mod(InOut,2) == 0 %even = outside
-                                    MAC.VOpIntUn(1,nn,oo) = MAC.VOPv(1,MAC.VOpInt(mm,oo,ii),oo,ii);
-                                    MAC.VOpIntUn(2,nn,oo) = MAC.VOPv(2,MAC.VOpInt(mm,oo,ii),oo,ii);
-                                    MAC.VOpIntUn(3,nn,oo) = MAC.VOPv(3,MAC.VOpInt(mm,oo,ii),oo,ii);
-                                    MAC.VOpIntUn(4,nn,oo) = MAC.VOPv(4,MAC.VOpInt(mm,oo,ii),oo,ii);
-                                    MAC.VOpIntUn(5,nn,oo) = cos(MAC.VOpIntUn(4,nn,oo))*MAC.VelBo(1);
-                                    MAC.VOpIntUn(6,nn,oo) = sin(MAC.VOpIntUn(4,nn,oo))*MAC.VelBo(1);
-                                    %test again? wheteher the velbo really
-                                    %outside?
-                                    nn = nn+1; %number of escape route in every avoplane, regardless the obstacle
+                                if mod(InOut,2) ~= 0 %odd = inside (directly) forget about it, no need to test the point with other jj
+                                    forget = 1;
+                                    break; %break the jj, stopping jj loop
+                                     %number of escape route in every avoplane, regardless the obstacle
                                 end
                             end
                         end
+                        if forget == 0 % not included in any of jj polygon
+                           MAC.VOpIntUn(1,nn,oo) = MAC.VOPv(1,MAC.VOpInt(mm,oo,ii),oo,ii);
+                           MAC.VOpIntUn(2,nn,oo) = MAC.VOPv(2,MAC.VOpInt(mm,oo,ii),oo,ii);
+                           MAC.VOpIntUn(3,nn,oo) = MAC.VOPv(3,MAC.VOpInt(mm,oo,ii),oo,ii);
+                           MAC.VOpIntUn(4,nn,oo) = MAC.VOPv(4,MAC.VOpInt(mm,oo,ii),oo,ii);
+                           MAC.VOpIntUn(5,nn,oo) = cos(MAC.VOpIntUn(4,nn,oo))*MAC.VelBo(1);
+                           MAC.VOpIntUn(6,nn,oo) = sin(MAC.VOpIntUn(4,nn,oo))*MAC.VelBo(1);
+                           %reverse the rolltation?
+%                            RotVirRoll =[1 0 0; 
+%                                         0 cos(MAC.VOpVee(oo)) sin(MAC.VOpVee(oo));
+%                                         0 -sin(MAC.VOpVee(oo)) cos(MAC.VOpVee(oo))];
+                           MAC.VOpIntUn(7,nn,oo) = MAC.VOpIntUn(1,nn,oo)+0*MAC.VOpIntUn(2,nn,oo)+0;
+                           MAC.VOpIntUn(8,nn,oo) = 0*MAC.VOpIntUn(1,nn,oo)+cos(-MAC.VOpVee(oo))*MAC.VOpIntUn(2,nn,oo)+0;
+                           MAC.VOpIntUn(9,nn,oo) = 0*MAC.VOpIntUn(1,nn,oo)-sin(-MAC.VOpVee(oo))*MAC.VOpIntUn(2,nn,oo)+0;
+                           %or if we are using the VelBo magnitude
+                           MAC.VOpIntUn(10,nn,oo) = MAC.VOpIntUn(5,nn,oo)+0*MAC.VOpIntUn(6,nn,oo)+0;
+                           MAC.VOpIntUn(11,nn,oo) = 0*MAC.VOpIntUn(5,nn,oo)+cos(-MAC.VOpVee(oo))*MAC.VOpIntUn(6,nn,oo)+0;
+                           MAC.VOpIntUn(12,nn,oo) = 0*MAC.VOpIntUn(5,nn,oo)-sin(-MAC.VOpVee(oo))*MAC.VOpIntUn(6,nn,oo)+0;
+                           nn = nn+1;
+                        end
+                        %then try another mm of ii
                     end
                 end
                 MAC.VOpIntNumUn(oo) = nn-1;
             end
             
             
-            chch = 1; 
+            chch = 0; 
             if chch > 0
                 %figure(20)
                 coco = ['b';'m';'c';'k'];
                 for oo = 1:12
                     figure(20+oo)
                     for ii = 1:MAC.NumObs
-                        Aaa = MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii)
-                        Bbb = MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)
                         plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii),['-d' coco(ii)]); grid on; axis equal; hold on;
                         for nn = 1:MAC.VOpNumInt(oo,ii)
                             plot(MAC.VOPv(1,MAC.VOpInt(nn,oo,ii),oo,ii),MAC.VOPv(2,MAC.VOpInt(nn,oo,ii),oo,ii),'*r')
@@ -539,8 +548,8 @@ classdef CAS004< Computer
                 stopppp
                 
             end
+            
         end
-        
         
         function VelocityObstacle(MAC)
             SizeOb = size(MAC.ObPosGlo);

@@ -8,9 +8,10 @@ clear all; clc; close all;
 
 %%
 %Making the world.... making the object==================================
-AgentNumber = 4;
-tSimTiR = 20; %Recording Alocation
-tTiStR = 0.05; %Recording Save
+AgentNumber = 3;
+tSimTiR = 10; %Recording Alocation
+tTiStR = 0.1; %Recording Save
+VOpPoints = zeros(200000,1);
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -35,6 +36,13 @@ for tii = 1:AgentNumber
     RecUVW_g(tii) = FDRecord('XYZ_g',tSimTiR,tTiStR,3);
     RecVTP_g(tii) = FDRecord('XYZ_g',tSimTiR,tTiStR,3);
     RecExpVO(tii) = FDRecord('VO',tSimTiR,tTiStR,4); 
+    
+    
+    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
+    %RecVOpEsc1(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
+    %RecVOpEsc2(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
+    RecVOpNum(tii) = FDRecord('VO',tSimTiR,tTiStR,50); %all scalar number
+    
     RecODist(tii) = FDRecord('ODist',tSimTiR,tTiStR,4); 
 end
 %========================================================================
@@ -137,20 +145,20 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;
 %%
 
 %if you want scenario visualization======================================
-InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
+%InitialVisualization; %three figure, CCframe, CC, VO. NOT A FUNCTION!
 %=========================================================================
 
 %%
 %Puting Init Value into Objects =========================================
 %dynamic parameter
 NTurnRate = 10/180*pi;
-GoalvPath = 0.002;
+GoalvPath = 0.01;
 
 ATurnRate = 10/180*pi;
 ADist = [10; 10; 10; 10];
 VOpPo = 0:2*pi/144:2*pi; 
-VOpVee = -pi/2:pi/12:pi/2;
-DecMode = 1;
+VOpVee = pi/2:pi/12:pi/2;
+DecMode = [1; 0; 0; 0];
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -159,7 +167,7 @@ for tii = 1:AgentNumber
     GPSP(tii).SetInit(XYZ_g(:,tii));
     %CASManager?
     GCS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZsta_g(:,tii) XYZfin_g(:,tii)],NTurnRate,GoalvPath);
-    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZsta_g(:,tii) XYZfin_g(:,tii)],ATurnRate,ADist(tii),VOpPo,VOpVee,DecMode);
+    CAS(tii).SetInit(UVW_b(:,tii),VTP_g(:,tii),[XYZsta_g(:,tii) XYZfin_g(:,tii)],ATurnRate,ADist(tii),VOpPo,VOpVee,DecMode(tii));
     
     RecXYZ_g(tii).AddRecord(Agent(tii).GloPos)
     RecXYZ_g(tii).AddRecord2(XYZfin_g(:,tii))
@@ -230,7 +238,25 @@ while ElaTi < TimeEnd
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
         
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
-        RecODist(ii).AddRecord([CAS(ii).ObDist(1); 0; 0; 0])
+        RecODist(ii).AddRecord([CAS(ii).ObDist(1); CAS(ii).Interupt; CAS(ii).Decision(4); 0])
+        ee = 1;
+        %saving private ryan
+        for aa = 1:AgentNumber-1
+           for bb = 1:length(VOpVee) %many avo pl
+               %VOpEscPo(ff) = CAS(ii).VOpIntNumUn(12,smething,oo);
+               ff = ff+1;
+              for cc = 1:length(VOpPo) %many point
+                  for dd = 1:(AgentNumber-1)*2
+                      VOpPoints(ee) = CAS(ii).VOPv(dd,cc,bb,aa);
+                      
+                      ee = ee+1;
+                  end
+              end
+           end
+        end
+        RecVOpVe(ii).AddRecord(VOpPoints);
+        
+        
         if ii == 2
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
@@ -238,11 +264,14 @@ while ElaTi < TimeEnd
         Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
         dde=0;
     end
+    %[aa bb cc dd ee]
+    
     ElaTi = ElaTi + TiSt;
 end
+
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist AgentNumber Rsep
-
+save RecordVO RecVOpVe 
 clear all;
 %=====================================================================
 %%

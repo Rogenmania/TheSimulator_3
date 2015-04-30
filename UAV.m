@@ -63,13 +63,13 @@ classdef UAV < handle
         end
         
         function MoveTimeD_3(UAVC,TiSt)
-            RotMatP = [cos(-UAVC.GloAtt(3)) sin(-UAVC.GloAtt(3)) 0; -sin(-UAVC.GloAtt(3)) cos(-UAVC.GloAtt(3)) 0 ; 0 0 1]; %3D turning to heading
-            RotMatT = [cos(-UAVC.GloAtt(2)) 0 -sin(-UAVC.GloAtt(2)); 0 1 0; sin(-UAVC.GloAtt(2)) 0 cos(-UAVC.GloAtt(2))];
-            RotMatV = [1 0 0; 0 cos(-UAVC.GloAtt(1)) sin(-UAVC.GloAtt(1)); 0 -sin(-UAVC.GloAtt(1)) cos(-UAVC.GloAtt(1))];
-            MatB2E = RotMatP*RotMatT*RotMatV;
+            %RotMatP = [cos(-UAVC.GloAtt(3)) sin(-UAVC.GloAtt(3)) 0; -sin(-UAVC.GloAtt(3)) cos(-UAVC.GloAtt(3)) 0 ; 0 0 1]; %3D turning to heading
+            %RotMatT = [cos(-UAVC.GloAtt(2)) 0 -sin(-UAVC.GloAtt(2)); 0 1 0; sin(-UAVC.GloAtt(2)) 0 cos(-UAVC.GloAtt(2))];
+            %RotMatV = [1 0 0; 0 cos(-UAVC.GloAtt(1)) sin(-UAVC.GloAtt(1)); 0 -sin(-UAVC.GloAtt(1)) cos(-UAVC.GloAtt(1))];
+            %MatB2E = RotMatP*RotMatT*RotMatV;
 
-            UAVC.BodVel = UAVC.InputDV;
-            UAVC.GloVel = MatB2E*UAVC.BodVel;
+            %UAVC.BodVel = UAVC.InputDV;
+            UAVC.GloVel = UAVC.InputDV;
             
             UAVC.GloAtt = [0;
                           -atan2(UAVC.GloVel(3),((UAVC.GloVel(2)^2+UAVC.GloVel(1)^2)^0.5)); 

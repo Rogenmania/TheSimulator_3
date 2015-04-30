@@ -10,6 +10,8 @@ for ii = 1:AgentNumber
             UVW_g(ii,kk,jj) = RecUVW_g(ii).Data(kk,jj);
             VTP_g(ii,kk,jj) = RecVTP_g(ii).Data(kk,jj);
             ODist(ii,jj) = RecODist(ii).Data(1,jj);
+            CInteru(ii,jj) = RecODist(ii).Data(2,jj);
+            CDecis(ii,jj) = RecODist(ii).Data(3,jj);
         end
     end
     XYZ_start(:,ii) = RecXYZ_g(ii).Data2(:,2);
@@ -98,15 +100,37 @@ for sii = 1:DatNum
         
     end
     disp(num2str(VTP_g(1,:,sii)*57.3))
-    Rola(sii) = VTP_g(1,1,sii)*57.3;
+    Rola(1,sii) = VTP_g(1,1,sii)*57.3;
+    Rola(2,sii) = VTP_g(1,2,sii)*57.3;
+    Rola(3,sii) = VTP_g(1,3,sii)*57.3;
+    Rola(4,sii) = CInteru(1,sii);
+    Rola(5,sii) = CDecis(1,sii)*57.3;
     Roli(sii) = ODist(1,sii);
+    
+    Rolu(1,sii) = UVW_g(1,1,sii);
+    Rolu(2,sii) = UVW_g(1,2,sii);
+    Rolu(3,sii) = UVW_g(1,3,sii);
+    Rolu(4,sii) = CInteru(1,sii);
+    Rolu(5,sii) = CDecis(1,sii)*57.3;
     %disp(num2str(XYZ_g(2,:,sii)*57.3))
     %disp(num2str(UVW_g(2,:,sii)*57.3))
-    pause(0.01)
+    pause(0.1)
 end
 figure(13)
-plot(Rola)
+plot(Rola(1,:),'b'); hold on;
+plot(Rola(2,:),'r');
+plot(Rola(3,:),'g');
+plot(Rola(4,:)*100,'k');
+plot(Rola(5,:),'m');
+grid on;
 
 figure(14)
-plot(Roli); grid on;
+plot(Rolu(1,:),'b'); hold on;
+plot(Rolu(2,:),'r');
+plot(Rolu(3,:),'g');
+plot(Rolu(4,:)*5,'k');
+plot(Rolu(5,:),'m');
+grid on;
+
+
 %========================================================================
