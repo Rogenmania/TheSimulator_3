@@ -8,7 +8,7 @@ clear all; clc; close all;
 
 %%
 %Making the world.... making the object==================================
-AgentNumber = 3;
+AgentNumber = 4;
 tSimTiR = 20; %Recording Alocation
 tTiStR = 0.05; %Recording Save
 load('CASData.mat'); %the velocity and distance data of the spheres
@@ -120,16 +120,16 @@ XYZfin_g = XYZ_g + UVW_g*Tifin;%++++++++++++++++++++++++++++++++++++++++++++++++
 %=========================================================================
 
 %% Dumd Scenario
-XYZ_g = [0 10+10/(3^0.5) 10+10/(3^0.5); 
-         0 -10/(3^0.5) 10/(3^0.5);
-         0 -10/(3^0.5) -10/(3^0.5)];
-UVW_g = [2 -2/(3^0.5) -2/(3^0.5);
-         0 2/(3^0.5) -2/(3^0.5);
-         0 2/(3^0.5) 2/(3^0.5)];
-UVW_b = [2 2 2; 0 0 0; 0 0 0];
-VTP_g = [0 0 0;
-         0 54.7330-90 -(54.7330-90);
-         0 90-45 90-45]/180*pi;
+XYZ_g = [0 10+10/(3^0.5) 10+10/(3^0.5) 20; 
+         0 -10/(3^0.5) 10/(3^0.5) 0;
+         0 -10/(3^0.5) -10/(3^0.5) 0];
+UVW_g = [2 -2/(3^0.5) -2/(3^0.5) -2;
+         0 2/(3^0.5) -2/(3^0.5) 0;
+         0 2/(3^0.5) 2/(3^0.5) 0];
+UVW_b = [2 2 2 2; 0 0 0 0; 0 0 0 0];
+VTP_g = [0 0 0 0;
+         0 54.7330-90 -(54.7330-90) 0;
+         0 90-45 90-45 180]/180*pi;
 VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
 VTP_g(:,3) = [0; -atan2(UVW_g(3,3),((UVW_g(2,3)^2+UVW_g(1,3)^2)^0.5)); atan2(UVW_g(2,3),UVW_g(1,3))];
 XYZsta_g = XYZ_g - UVW_g*Tifin/1000;
@@ -147,8 +147,8 @@ NTurnRate = 10/180*pi;
 GoalvPath = 0.002;
 
 ATurnRate = 10/180*pi;
-ADist = [10; 10; 10];
-VOpPo = 0:2*pi/36:2*pi; 
+ADist = [10; 10; 10; 10];
+VOpPo = 0:2*pi/144:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
 DecMode = 1;
 for tii = 1:AgentNumber

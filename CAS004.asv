@@ -113,8 +113,7 @@ classdef CAS004< Computer
                  %actually dont need to calculate VOP if is not imminent, or if
                  %it is not inside VO. but we just try to calculate all.
                  %Only not avoid
-           VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....      
-           %VOAvoPlaneTest(MAC);
+           VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....             
            VOAvoPlane(MAC);
            
            MAC.CASFlag(4,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
@@ -305,7 +304,6 @@ classdef CAS004< Computer
              MAC.CASFlag(3,1) = sum(MAC.CASFlag(3,2:MAC.NumObs+1)); %and the number of inclusion
         end
         
-      
         function VOAvoPlane(MAC)
             %actually only need to run if it is included in the VO3D and imminent....
             %it need to combined all points from all obstacles.
@@ -319,9 +317,25 @@ classdef CAS004< Computer
                     VOApVee = RotVirRoll*MAC.VOAp(:,ii);
                     
                     for pp = 1:length(MAC.TiVOBp)
+                        
                         VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
+                        ffds = MAC.VOBp(:,pp,ii)
+                        ffds = VOBpVee(:,pp)
                     end
-
+                    if ii == 3
+                        ht
+                    end
+                    chchi = 1
+                    if chchi > 0
+                        figure(16)
+                        VOA = VOApVee;
+                        VOB = VOBpVee;
+                        plot3([VOA(1,ii) VOB(1,1:round(end/4),ii) VOA(1,ii) VOB(1,round(end/4):round(end/2),ii) VOA(1,ii) VOB(1,round(end/2):round(3*end/4),ii) VOA(1,ii) VOB(1,round(3*end/4):end,ii)],...
+                            [VOA(2,ii) VOB(2,1:round(end/4),ii) VOA(2,ii) VOB(2,round(end/4):round(end/2),ii) VOA(2,ii) VOB(2,round(end/2):round(3*end/4),ii) VOA(2,ii) VOB(2,round(3*end/4):end,ii)],...
+                            [VOA(3,ii) VOB(3,1:round(end/4),ii) VOA(3,ii) VOB(3,round(end/4):round(end/2),ii) VOA(3,ii) VOB(3,round(end/2):round(3*end/4),ii) VOA(3,ii) VOB(3,round(3*end/4):end,ii)]); grid on; axis equal;
+                        %stopppp
+                        hold on;
+                    end
                     %for every point (t), jj. But remember, not all t result in
                     %a valid point in VOp.
                     %and to anticipate degenerate cases
@@ -329,8 +343,7 @@ classdef CAS004< Computer
                     %2. if --> a line? actually would mean Vo is not on VO, or is on the egde
                     %3. if --> a point?actually would mean Vo is not on VO,or at the origin of vO 
                     kk = 1;
-                    
-                    if abs(VOApVee(3)) > 0.0000001 %not degenerate case
+                    if VOApVee(3)) = 0 %not degenerate case
                         for jj = 1:length(MAC.TiVOBp)
                             TiVOGl =VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
                             if TiVOGl > 0 || TiVOGl < 1 %elminating the hyperbolic or point beyond dvo
@@ -372,27 +385,32 @@ classdef CAS004< Computer
                             else
                                jjj = jj+1;
                             end
-
+                            xx = VOBpVee(3,jj)*VOBpVee(3,jjj)
+                            vv = VOBpVee(3,:)
                             if VOBpVee(3,jj)*VOBpVee(3,jjj) < 0
                                 TiVOGl = VOBpVee(3,jjj)/(VOBpVee(3,jj)-VOBpVee(3,jjj));
                                 MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOBpVee(1,jjj))*TiVOGl+VOBpVee(1,jjj);
                                 MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOBpVee(2,jjj))*TiVOGl+VOBpVee(2,jjj);
-                                Aa =MAC.VOPv(1,kk,oo,ii);
-                                Bb =MAC.VOPv(2,kk,oo,ii);
-                                Cc = (VOBpVee(3,jj)-VOBpVee(3,jjj));
-                                Dd = TiVOGl;
+                                Aa =MAC.VOPv(1,kk,oo,ii)
+                                Bb =MAC.VOPv(2,kk,oo,ii)
+                                Cc = (VOBpVee(3,jj)-VOBpVee(3,jjj))
+                                Dd = TiVOGl
                                 kk = kk+1;
                                 zz = zz+1;
                             elseif VOBpVee(3,jj) == 0
                                 MAC.VOPv(1,kk,oo,ii) = VOBpVee(1,jj);
                                 MAC.VOPv(2,kk,oo,ii) = VOBpVee(2,jj);
-                                Aa =MAC.VOPv(1,kk,oo,ii);
-                                Bb =MAC.VOPv(2,kk,oo,ii);
+                                Aa =MAC.VOPv(1,kk,oo,ii)
+                                Bb =MAC.VOPv(2,kk,oo,ii)
                                 kk = kk+1;
                                 zz = zz+1;
                             end
                         end
-
+                        zz
+                        if oo == length(MAC.VOpVee)
+                            fbdfbvdfvd
+                        end
+                         
                         %iyhgiu
                         %^above should always result 2 point!25,26 (convex)
                         %NOW put 25 (half length(MAC.TiVOBp) point evenly? on 
@@ -401,15 +419,23 @@ classdef CAS004< Computer
                         for ll = 2:(HalfPo-1)
                             MAC.VOPv(1,ll,oo,ii) = (MAC.VOPv(1,HalfPo,oo,ii)-MAC.VOPv(1,1,oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(1,1,oo,ii);
                             MAC.VOPv(2,ll,oo,ii) = (MAC.VOPv(2,HalfPo,oo,ii)-MAC.VOPv(2,1,oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(2,1,oo,ii);
-
+                            cc = MAC.VOPv(1,HalfPo,oo,ii)-MAC.VOPv(1,1,oo,ii)
+                            dd = (ll-1)/(HalfPo-1)
+                            ee = MAC.VOPv(1,1,oo,ii)
+                            cc*dd+ee
+                            
                             MAC.VOPv(1,ll+HalfPo,oo,ii) = (MAC.VOPv(1,1,oo,ii)-MAC.VOPv(1,(HalfPo+1),oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(1,(HalfPo+1),oo,ii);
                             MAC.VOPv(2,ll+HalfPo,oo,ii) = (MAC.VOPv(2,1,oo,ii)-MAC.VOPv(2,(HalfPo+1),oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(2,(HalfPo+1),oo,ii);
-
+                            
+                            if oo == length(MAC.VOpVee)-1
+                                fbdfbvdfvd
+                            end
                         end
                         MAC.VOpNum(oo,ii) = HalfPo*2-1;
                         chck = 1;
                         if chck > 0
                             figure(5)
+                            
                             plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)); hold on;
                             plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'or','MarkerSize',10)
                             plot(MAC.VOPv(1,HalfPo,oo,ii),MAC.VOPv(2,HalfPo,oo,ii),'ob','MarkerSize',10)
