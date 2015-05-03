@@ -88,6 +88,7 @@ classdef CAS004< Computer
         VOpNumInt
         VOpIntUn
         VOpIntNumUn
+        VOpEscOp
         
         DecMode
         DecFiAvoPl
@@ -146,12 +147,12 @@ classdef CAS004< Computer
                    %smallest angle to the right of escape (4), with smallest dcc biggest but lower than Vo (3), ?
                    %hence, the smallest positive (4). actually, only one..
                    %what if multiplication?
-                   for oo = 1%:length(MAC.VOpVee)
+                   for oo = 1:length(MAC.VOpVee)
                        for ii = 1:MAC.VOpIntNumUn(oo)
                            if MAC.VOpIntUn(4,ii,oo) >= 0
                                if MAC.VOpIntUn(4,ii,oo) < AngAvoPl
-                                   VelAvo =  [MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
-                                   AngAvoPl =  MAC.VOpIntUn(4,ii,oo);
+                                   VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
+                                   AngAvoPl = MAC.VOpIntUn(4,ii,oo);
                                    SelAvoPl = MAC.VOpVee(oo);
                                end
                            end
@@ -174,13 +175,13 @@ classdef CAS004< Computer
            end
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
-           if MAC.CASFlag(1,1)  == 1 && MAC.CASFlag(3,1) == 1 %Imminent and inside VO (DIV?)
+           if MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(3,1) == 1 %Imminent and inside VO (DIV?)
               MAC.Interupt = 1; 
               Aaa = [VelAvo; [AngAvoPl; 0; 0]]
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; 0]];
-           elseif MAC.CASFlag(1,1)  == 1 %&& MAC.CASFlag(3,1) ~= 1
+           elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
               MAC.Interupt = 1;
-              MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]];
+              MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
            else
               MAC.Interupt = 0; 
            end
@@ -225,7 +226,7 @@ classdef CAS004< Computer
                 
                 for jj = 1:4 %the four radii - TW, Dec, Esc, Pz
                     MAC.SepRad(jj,ii) = MAC.CASDistDat(jj,MAC.Cate,MAC.ObsCats(ii));
-                    MAC.SepRad(jj,ii) = 2;
+                    %MAC.SepRad(jj,ii) = 2;
                     
                 end
                 
@@ -408,16 +409,7 @@ classdef CAS004< Computer
 
                         end
                         MAC.VOpNum(oo,ii) = HalfPo*2-1;
-                        chck = 0;
-                        if chck > 0
-                            figure(5)
-                            plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)); hold on;
-                            plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'or','MarkerSize',10)
-                            plot(MAC.VOPv(1,HalfPo,oo,ii),MAC.VOPv(2,HalfPo,oo,ii),'ob','MarkerSize',10)
-                            plot(MAC.VOPv(1,HalfPo+1,oo,ii),MAC.VOPv(2,HalfPo+1,oo,ii),'og','MarkerSize',10)
-                            plot(MAC.VOPv(1,MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,HalfPo*2-1,oo,ii),'om','MarkerSize',10)  
-                        end
-                        
+                        %completing no 3 and 4
                         for pp = 1:HalfPo*2-1
                             MAC.VOPv(3,pp,oo,ii) = (MAC.VOPv(1,pp,oo,ii)^2+MAC.VOPv(2,pp,oo,ii)^2)^0.5; %Polar magnitude
                             if abs(MAC.VOPv(1,pp,oo,ii)) > 0
@@ -427,9 +419,24 @@ classdef CAS004< Computer
                                 MAC.VOPv(4,pp,oo,ii) = sign(MAC.VOPv(2,pp,oo,ii))*pi/2;
                             end
                         end
+                        
+                        
+                        %=================================================
+                        chck = 0;
+                        if chck > 0
+                            figure(5)
+                            plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)); hold on;
+                            plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'or','MarkerSize',10)
+                            plot(MAC.VOPv(1,HalfPo,oo,ii),MAC.VOPv(2,HalfPo,oo,ii),'ob','MarkerSize',10)
+                            plot(MAC.VOPv(1,HalfPo+1,oo,ii),MAC.VOPv(2,HalfPo+1,oo,ii),'og','MarkerSize',10)
+                            plot(MAC.VOPv(1,MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,HalfPo*2-1,oo,ii),'om','MarkerSize',10)  
+                        end
+                        %================================================
+                        
     
                     end
-
+                    
+                    %escaping options
                     mm = 1;
                     for ll = 1:MAC.VOpNum(oo,ii)                
                         %a search for two points closest to
@@ -446,13 +453,15 @@ classdef CAS004< Computer
                         if (MAC.VOPv(3,ll,oo,ii)-MAC.VelBo(1))*(MAC.VOPv(3,lll,oo,ii)-MAC.VelBo(1)) <= 0
                             MAC.VOpInt(mm,oo,ii) = ll; %recorded ll is the index of escape route of VOPv
                             MAC.VOpInt(mm+1,oo,ii) = lll;
+                            MAC.VOpEscOp(ll,oo,ii) = 1;
                             mm = mm+2;
+                        else
+                            MAC.VOpEscOp(ll,oo,ii) = 0;
                         end
                     end
                     MAC.VOpNumInt(oo,ii) = mm-1;
                 end
             end
-            
             %should eliminate points inside... how? --> on each AvoPlane oo
             %with multiple obstacle ii test ii point with ii+1 polygon, and
             %the ii+1 point with ii polygon., for each oo
@@ -510,6 +519,8 @@ classdef CAS004< Computer
                            MAC.VOpIntUn(10,nn,oo) = MAC.VOpIntUn(5,nn,oo)+0*MAC.VOpIntUn(6,nn,oo)+0;
                            MAC.VOpIntUn(11,nn,oo) = 0*MAC.VOpIntUn(5,nn,oo)+cos(-MAC.VOpVee(oo))*MAC.VOpIntUn(6,nn,oo)+0;
                            MAC.VOpIntUn(12,nn,oo) = 0*MAC.VOpIntUn(5,nn,oo)-sin(-MAC.VOpVee(oo))*MAC.VOpIntUn(6,nn,oo)+0;
+                           
+                           MAC.VOpEscOp(MAC.VOpInt(mm,oo,ii),oo,ii) = 2; % 2 index for global sol entire oo
                            nn = nn+1;
                         end
                         %then try another mm of ii
@@ -519,13 +530,13 @@ classdef CAS004< Computer
             end
             
             
-            chch = 0; 
+            chch =0; 
             if chch > 0
                 %figure(20)
                 coco = ['b';'m';'c';'k'];
                 for oo = 1:12
                     figure(20+oo)
-                    for ii = 1:MAC.NumObs
+                    for ii = 1:MAC.NumObs-1
                         plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii),['-d' coco(ii)]); grid on; axis equal; hold on;
                         for nn = 1:MAC.VOpNumInt(oo,ii)
                             plot(MAC.VOPv(1,MAC.VOpInt(nn,oo,ii),oo,ii),MAC.VOPv(2,MAC.VOpInt(nn,oo,ii),oo,ii),'*r')

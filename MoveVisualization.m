@@ -37,7 +37,7 @@ figure(10) %just to make sure..
 hold on; grid on; axis equal;
 set(gca,'ZDir','reverse','YDir','reverse','CameraPosition',[-62 101 -35],'CameraViewAngle',9,...
         'View',[-35.4711 15.846])
-axis([0 20 -10 10 -10 10])
+axis([0 40 -20 20 -20 20])
 ColSet = ['b'; 'r'; 'g'; 'm']; 
 
 ForTrckX = zeros(1,DatNum); 
@@ -105,7 +105,7 @@ for sii = 1:DatNum
     Rola(3,sii) = VTP_g(1,3,sii)*57.3;
     Rola(4,sii) = CInteru(1,sii);
     Rola(5,sii) = CDecis(1,sii)*57.3;
-    Roli(sii) = ODist(1,sii);
+    Roli(:,sii) = ODist(:,sii);
     
     Rolu(1,sii) = UVW_g(1,1,sii);
     Rolu(2,sii) = UVW_g(1,2,sii);
@@ -132,5 +132,8 @@ plot(Rolu(4,:)*5,'k');
 plot(Rolu(5,:),'m');
 grid on;
 
+figure(15)
+plot(Roli')
+grid on;
 
 %========================================================================

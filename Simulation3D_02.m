@@ -11,7 +11,8 @@ clear all; clc; close all;
 AgentNumber = 3;
 tSimTiR = 10; %Recording Alocation
 tTiStR = 0.1; %Recording Save
-VOpPoints = zeros(200000,1);
+VOpPoints = zeros(15000,1);
+VOpEscPoints = zeros(15000,1);
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -38,7 +39,9 @@ for tii = 1:AgentNumber
     RecExpVO(tii) = FDRecord('VO',tSimTiR,tTiStR,4); 
     
     
-    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
+    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,15000);
+    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,15000); %the point and AvoPlane? of escape
+    RecDecision(tii) = FDRecord('VO',tSimTiR,tTiStR,6); %actually the decision - pointV (3), and AVO, and interupt?
     %RecVOpEsc1(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     %RecVOpEsc2(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     RecVOpNum(tii) = FDRecord('VO',tSimTiR,tTiStR,50); %all scalar number
@@ -157,8 +160,8 @@ GoalvPath = 0.01;
 ATurnRate = 10/180*pi;
 ADist = [10; 10; 10; 10];
 VOpPo = 0:2*pi/144:2*pi; 
-VOpVee = pi/2:pi/12:pi/2;
-DecMode = [1; 0; 0; 0];
+VOpVee = -pi/2:pi/12:pi/2;
+DecMode = [1; 1; 1; 1];
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -240,22 +243,24 @@ while ElaTi < TimeEnd
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
         RecODist(ii).AddRecord([CAS(ii).ObDist(1); CAS(ii).Interupt; CAS(ii).Decision(4); 0])
         ee = 1;
+        ff = 1;
+        dd=1;
         %saving private ryan
         for aa = 1:AgentNumber-1
            for bb = 1:length(VOpVee) %many avo pl
                %VOpEscPo(ff) = CAS(ii).VOpIntNumUn(12,smething,oo);
-               ff = ff+1;
+               %ff = ff+1;
               for cc = 1:length(VOpPo) %many point
-                  for dd = 1:(AgentNumber-1)*2
-                      VOpPoints(ee) = CAS(ii).VOPv(dd,cc,bb,aa);
-                      
-                      ee = ee+1;
-                  end
+                  VOpPoints(dd) = CAS(ii).VOPv(1,cc,bb,aa);
+                  VOpPoints(dd+1) = CAS(ii).VOPv(2,cc,bb,aa);
+                  VOpPoints(dd+2) = CAS(ii).VOpEscOp(cc,bb,aa);
+                  dd = dd+3;
               end
            end
         end
         RecVOpVe(ii).AddRecord(VOpPoints);
-        
+        RecVOpEscOp(ii).AddRecord(VOpEscPoints);
+
         
         if ii == 2
             Aa2 = Agent(ii).GloAtt;
