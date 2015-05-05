@@ -67,10 +67,10 @@ classdef UAV < handle
             %RotMatT = [cos(-UAVC.GloAtt(2)) 0 -sin(-UAVC.GloAtt(2)); 0 1 0; sin(-UAVC.GloAtt(2)) 0 cos(-UAVC.GloAtt(2))];
             %RotMatV = [1 0 0; 0 cos(-UAVC.GloAtt(1)) sin(-UAVC.GloAtt(1)); 0 -sin(-UAVC.GloAtt(1)) cos(-UAVC.GloAtt(1))];
             %MatB2E = RotMatP*RotMatT*RotMatV;
-
+            Aaab = UAVC.GloVel
             %UAVC.BodVel = UAVC.InputDV;
             UAVC.GloVel = UAVC.InputDV;
-            
+            Aaac = UAVC.GloVel
             UAVC.GloAtt = [0;
                           -atan2(UAVC.GloVel(3),((UAVC.GloVel(2)^2+UAVC.GloVel(1)^2)^0.5)); 
                            atan2(UAVC.GloVel(2),UAVC.GloVel(1))];

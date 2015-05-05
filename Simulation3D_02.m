@@ -197,6 +197,7 @@ ttt=300;
 dde = 0;
 while ElaTi < TimeEnd
     for ii = 1:AgentNumber  %Each Agent Process, still on same phase
+        
         disp([num2str(ElaTi) '  hitungan agent ' num2str(ii) '============'])
         %Sensor Sensing...
         VelSens(ii).Sense(Agent(ii).BodVel)
@@ -218,7 +219,8 @@ while ElaTi < TimeEnd
             ProxSensP(ii).MeasureData, ProxSensV(ii).MeasureData)
         %GCS Computer receive all sensor data
         GCS(ii).InputSensor(GPSP(ii).MeasureData,GPSV(ii).MeasureData,...
-            VelSens(ii).MeasureData, AttSens(ii).MeasureData,[],[])
+            VelSens(ii).MeasureData, AttSens(ii).MeasureData,...
+            ProxSensP(ii).MeasureData, ProxSensV(ii).MeasureData)
         
         %Avoidance Computer
         GCS(ii).GCSRun()                                                   %GCS Computer analyzing and deciding
@@ -241,7 +243,9 @@ while ElaTi < TimeEnd
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
         
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
+        sSS= CAS(ii).Decision
         RecODist(ii).AddRecord([CAS(ii).ObDist(1); CAS(ii).Interupt; CAS(ii).Decision(4); 0])
+        
         ee = 1;
         ff = 1;
         dd=1;
@@ -266,7 +270,9 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
+
         Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+
         dde=0;
     end
     %[aa bb cc dd ee]
@@ -276,7 +282,7 @@ end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist AgentNumber Rsep
-save RecordVO RecVOpVe 
+save RecordVO RecVOpVe RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%

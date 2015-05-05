@@ -19,7 +19,7 @@ classdef FDRecord < handle
         function FDR = FDRecord(SaveFileName,SimTi,TiSt,Dim)
             FDR.Name = SaveFileName;
             FDR.Data = zeros(Dim, round(SimTi/TiSt));
-            size(FDR.Data)
+            size(FDR.Data);
             FDR.SizeData = size(FDR.Data);
             FDR.Data2 = zeros(Dim,50);
             FDR.TimeStep = TiSt;
@@ -27,7 +27,7 @@ classdef FDRecord < handle
             FDR.TimeEnd = SimTi;
         end
         function AddRecord(FDR,Datanya)
-            size(FDR.Data)
+            size(FDR.Data);
             FDR.Data(:,FDR.Elapsed) = Datanya; 
             FDR.Time(:,FDR.Elapsed+1) = FDR.Time(:,FDR.Elapsed) + FDR.TimeStep;
             FDR.Elapsed = FDR.Elapsed + 1;

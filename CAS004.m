@@ -158,7 +158,8 @@ classdef CAS004< Computer
                            end
                        end
                    end
-                   MAC.Decision(:,1) = [VelAvo; [AngAvoPl; 0; 0]]; % its already global velocity
+                   
+                   %MAC.Decision(:,1) = [VelAvo; [AngAvoPl; 0; 0]]; % its already global velocity
                    %then dont change the speed nor the AvoPlane before it
                    %become not imminent.
                    
@@ -173,17 +174,18 @@ classdef CAS004< Computer
                otherwise
                    
            end
+           
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
-           if MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(3,1) == 1 %Imminent and inside VO (DIV?)
+           if MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(3,1) >= 1 %Imminent and inside VO (DIV?)
               MAC.Interupt = 1; 
-              Aaa = [VelAvo; [AngAvoPl; 0; 0]]
-              MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; 0]];
-           elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
-              MAC.Interupt = 1;
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
+           elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
+              MAC.Interupt = 2;
+              MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]]; %stay on VelGlo...
            else
               MAC.Interupt = 0; 
+
            end
 
         end
@@ -344,7 +346,8 @@ classdef CAS004< Computer
                             if isreal(TiVOGl) == 0
                                 ghjfrtgj
                             end
-                            if TiVOGl > 0 || TiVOGl < 1 %elminating the hyperbolic or point beyond dvo
+                            
+                            if -TiVOGl >= 0 && -TiVOGl <= 1 %elminating the hyperbolic or point beyond dvo
                                 MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
                                 MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
                                 MAC.VOPv(3,kk,oo,ii) = (MAC.VOPv(1,kk,oo,ii)^2+MAC.VOPv(2,kk,oo,ii)^2)^0.5; %Polar magnitude
@@ -354,7 +357,14 @@ classdef CAS004< Computer
                                     MAC.VOPv(4,kk,oo,ii) = sign(MAC.VOPv(2,kk,oo,ii))*pi/2;
                                 end
                                 kk = kk+1;
-                            end  
+                            else % to keep the same number of point, where should we put the ones not in the genetrix?
+                                MAC.VOPv(1,kk,oo,ii) = 0;
+                                MAC.VOPv(2,kk,oo,ii) = 0;
+                                MAC.VOPv(3,kk,oo,ii) = 0;
+                                MAC.VOPv(4,kk,oo,ii) = pi/2;
+                                kk = kk+1;
+                            end
+                            
                         end
                         MAC.VOpNum(oo,ii) = kk-1;
                         
@@ -450,6 +460,7 @@ classdef CAS004< Computer
                         else
                             lll = ll+1;
                         end
+                        
                         if (MAC.VOPv(3,ll,oo,ii)-MAC.VelBo(1))*(MAC.VOPv(3,lll,oo,ii)-MAC.VelBo(1)) <= 0
                             MAC.VOpInt(mm,oo,ii) = ll; %recorded ll is the index of escape route of VOPv
                             MAC.VOpInt(mm+1,oo,ii) = lll;
@@ -522,6 +533,7 @@ classdef CAS004< Computer
                            
                            MAC.VOpEscOp(MAC.VOpInt(mm,oo,ii),oo,ii) = 2; % 2 index for global sol entire oo
                            nn = nn+1;
+                           
                         end
                         %then try another mm of ii
                     end
@@ -531,7 +543,7 @@ classdef CAS004< Computer
             
             
             chch =0; 
-            if chch > 0
+            if chch > 0 &&  MAC.VOpIntNumUn(oo)==0
                 %figure(20)
                 coco = ['b';'m';'c';'k'];
                 for oo = 1:12

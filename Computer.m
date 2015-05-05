@@ -26,7 +26,7 @@ classdef Computer < handle
         MatB2E
         MatW2B
         %Output for Dynamic, 2 calculation?
-        Decision     
+        Decision =[0;0;0;0;0;0]    
         %Manager Function
         WUse = 1;
         %Obstacle sensor
@@ -56,7 +56,8 @@ classdef Computer < handle
         function InputSensor(MAC,SensGPos,SensGVel,SensVel,SensAtt,SensObPos,SensObVel)
             %Own State
             MAC.PosGlo = SensGPos;%(X,Y,Z), should be GPS output
-            MAC.VelGlo = SensGVel; %maybe should be indirect
+            MAC.VelGlo = SensGVel; 
+            Bbb = SensGVel
             %MAC.AttGlo = atan2(SensGVel(2),SensGVel(1));
             MAC.VelBo = SensVel;%Vxb, Vyb, Vzb
             MAC.AttWi = SensAtt;
