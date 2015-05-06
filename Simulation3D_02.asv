@@ -9,10 +9,10 @@ clear all; clc; close all;
 %%
 %Making the world.... making the object==================================
 AgentNumber = 3;
-tSimTiR = 10; %Recording Alocation
+tSimTiR = 11; %Recording Alocation
 tTiStR = 0.1; %Recording Save
-VOpPoints = zeros(5000,1);
-VOpEscPoints = zeros(5000,1);
+VOpPoints = zeros(30000,1);
+VOpEscPoints = zeros(30000,1);
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -39,8 +39,8 @@ for tii = 1:AgentNumber
     RecExpVO(tii) = FDRecord('VO',tSimTiR,tTiStR,4); 
     
     
-    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,5000);
-    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,5000); %the point and AvoPlane? of escape
+    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,30000);
+    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,30000); %the point and AvoPlane? of escape
     RecDecision(tii) = FDRecord('VO',tSimTiR,tTiStR,6); %actually the decision - pointV (3), and AVO, and interupt?
     %RecVOpEsc1(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     %RecVOpEsc2(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
@@ -160,8 +160,8 @@ GoalvPath = 0.01;
 ATurnRate = 10/180*pi;
 ADist = [10; 10; 10; 10];
 VOpPo = 0:2*pi/144:2*pi; 
-VOpVee = pi/2:pi/12:pi/2;
-DecMode = [1; 0; 0; 0];
+VOpVee = -pi/2:pi/12:pi/2;
+DecMode = [1; 1; 1; 1];
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -197,6 +197,7 @@ ttt=300;
 dde = 0;
 while ElaTi < TimeEnd
     for ii = 1:AgentNumber  %Each Agent Process, still on same phase
+        
         disp([num2str(ElaTi) '  hitungan agent ' num2str(ii) '============'])
         %Sensor Sensing...
         VelSens(ii).Sense(Agent(ii).BodVel)
@@ -218,7 +219,8 @@ while ElaTi < TimeEnd
             ProxSensP(ii).MeasureData, ProxSensV(ii).MeasureData)
         %GCS Computer receive all sensor data
         GCS(ii).InputSensor(GPSP(ii).MeasureData,GPSV(ii).MeasureData,...
-            VelSens(ii).MeasureData, AttSens(ii).MeasureData,[],[])
+            VelSens(ii).MeasureData, AttSens(ii).MeasureData,...
+            ProxSensP(ii).MeasureData, ProxSensV(ii).MeasureData)
         
         %Avoidance Computer
         GCS(ii).GCSRun()                                                   %GCS Computer analyzing and deciding
@@ -242,8 +244,12 @@ while ElaTi < TimeEnd
         
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
         RecODist(ii).AddRecord([CAS(ii).ObDist(1); CAS(ii).Interupt; CAS(ii).Decision(4); 0])
+        size([CAS(ii).CASFlag(1,:)'; CAS(ii).CASFlag(2,:)'; CAS(ii).CASFlag(3,:)'])
+        RecOFlag(ii).AddRecord([CAS(ii).CASFlag(1,:)'; CAS(ii).CASFlag(2,:)'; CAS(ii).CASFlag(3,:)'])
+        
         ee = 1;
         ff = 1;
+        dd=1;
         %saving private ryan
         for aa = 1:AgentNumber-1
            for bb = 1:length(VOpVee) %many avo pl
@@ -251,14 +257,10 @@ while ElaTi < TimeEnd
                %ff = ff+1;
               for cc = 1:length(VOpPo) %many point
                   VOpPoints(dd) = CAS(ii).VOPv(1,cc,bb,aa);
-                  VOpPoints(dd+1) = CAS(ii).VOPv(d,cc,bb,aa);
-                  if CAS(ii).VOpInt(
-                  VOpPoints(dd+2) = CAS(ii).VOPv(d,cc,bb,aa);
-                  for dd = 1:(AgentNumber-1)*2
-                      
-                      VOpEscPoints(ee) = CAS(ii).VOPv(dd,cc,bb,aa);
-                      ee = ee+1;
-                  end
+                  VOpPoints(dd+1) = CAS(ii).VOPv(2,cc,bb,aa);
+                  VOpPoints(dd+2) = CAS(ii).VOpNum(bb,aa);
+                  VOpPoints(dd+3) = CAS(ii).VOpEscOp(cc,bb,aa);
+                  dd = dd+4;
               end
            end
         end
@@ -270,7 +272,9 @@ while ElaTi < TimeEnd
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
+
         Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+
         dde=0;
     end
     %[aa bb cc dd ee]
@@ -280,7 +284,7 @@ end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist AgentNumber Rsep
-save RecordVO RecVOpVe 
+save RecordVO RecVOpVe RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%

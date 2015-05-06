@@ -97,7 +97,6 @@ classdef GCS001 < Computer
         function ReadCAS(MAC,CASFlag,CASDesicion,Interupt)
             %GCS(ii).ReadCAS(CAS(ii).CASFlag,CAS(ii).Decision,CAS(ii).InteruptN)
             MAC.CASFlag = CASFlag; %for warning input
-            Ccc = Interupt
             if Interupt >= 1
                 MAC.Decision = CASDesicion;
             end

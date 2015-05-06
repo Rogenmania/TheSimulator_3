@@ -154,7 +154,6 @@ classdef CAS004< Computer
                                    VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
                                    AngAvoPl = MAC.VOpIntUn(4,ii,oo);
                                    SelAvoPl = MAC.VOpVee(oo);
-                                   Aaad = [VelAvo oo ii]
                                end
                            end
                        end
@@ -183,7 +182,6 @@ classdef CAS004< Computer
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
            elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
               MAC.Interupt = 2;
-              Aaa = MAC.VelGlo
               MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]]; %stay on VelGlo...
            else
               MAC.Interupt = 0; 
@@ -342,14 +340,14 @@ classdef CAS004< Computer
                     %3. if --> a point?actually would mean Vo is not on VO,or at the origin of vO 
                     kk = 1;
                     
-                    if abs(VOApVee(3)) > 0.0000001 %not degenerate case
+                    if abs(VOApVee(3)) > 0.00001 %not degenerate case
                         for jj = 1:length(MAC.TiVOBp)
                             TiVOGl =VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
                             if isreal(TiVOGl) == 0
                                 ghjfrtgj
                             end
-                            
-                            if -TiVOGl >= 0 && -TiVOGl <= 1 %elminating the hyperbolic or point beyond dvo
+                            Aaa = TiVOGl
+                            if  TiVOGl >= 0 && TiVOGl <= 1 %eliminating the hyperbolic or point beyond dvo, if z=0 is inside the line
                                 MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
                                 MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
                                 MAC.VOPv(3,kk,oo,ii) = (MAC.VOPv(1,kk,oo,ii)^2+MAC.VOPv(2,kk,oo,ii)^2)^0.5; %Polar magnitude
@@ -359,17 +357,18 @@ classdef CAS004< Computer
                                     MAC.VOPv(4,kk,oo,ii) = sign(MAC.VOPv(2,kk,oo,ii))*pi/2;
                                 end
                                 kk = kk+1;
-                            else % to keep the same number of point, where should we put the ones not in the genetrix?
-                                
-                                %MAC.VOPv(1,kk,oo,ii) = MAC.VOPv(1,kk-1,oo,ii);
-                                %MAC.VOPv(2,kk,oo,ii) = MAC.VOPv(1,kk-1,oo,ii);
-                                %MAC.VOPv(3,kk,oo,ii) = MAC.VOPv(1,kk-1,oo,ii);
-                                %MAC.VOPv(4,kk,oo,ii) = MAC.VOPv(1,kk-1,oo,ii);
-                                kk = kk+1;
+
                             end
                             
                         end
+                        
+                        if kk > 1
+                            for jj = kk:length(MAC.TiVOBp)
+                                MAC.VOPv(1:4,jj,oo,ii) = MAC.VOPv(1:4,kk-1,oo,ii);
+                            end
+                        end
                         MAC.VOpNum(oo,ii) = kk-1;
+                        kk
                         
                     else %degenerate case --> triangle
                         %first point is the VOApVee it self
@@ -536,6 +535,7 @@ classdef CAS004< Computer
                            
                            MAC.VOpEscOp(MAC.VOpInt(mm,oo,ii),oo,ii) = 2; % 2 index for global sol entire oo
                            nn = nn+1;
+                           
                         end
                         %then try another mm of ii
                     end
@@ -545,12 +545,12 @@ classdef CAS004< Computer
             
             
             chch =0; 
-            if chch > 0
+            if chch > 0 
                 %figure(20)
                 coco = ['b';'m';'c';'k'];
                 for oo = 1:12
                     figure(20+oo)
-                    for ii = 1:MAC.NumObs-1
+                    for ii = 1:MAC.NumObs
                         plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii),['-d' coco(ii)]); grid on; axis equal; hold on;
                         for nn = 1:MAC.VOpNumInt(oo,ii)
                             plot(MAC.VOPv(1,MAC.VOpInt(nn,oo,ii),oo,ii),MAC.VOPv(2,MAC.VOpInt(nn,oo,ii),oo,ii),'*r')

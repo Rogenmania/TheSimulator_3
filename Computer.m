@@ -57,7 +57,6 @@ classdef Computer < handle
             %Own State
             MAC.PosGlo = SensGPos;%(X,Y,Z), should be GPS output
             MAC.VelGlo = SensGVel; 
-            Bbb = SensGVel
             %MAC.AttGlo = atan2(SensGVel(2),SensGVel(1));
             MAC.VelBo = SensVel;%Vxb, Vyb, Vzb
             MAC.AttWi = SensAtt;

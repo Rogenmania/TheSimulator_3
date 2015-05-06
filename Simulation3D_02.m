@@ -9,10 +9,10 @@ clear all; clc; close all;
 %%
 %Making the world.... making the object==================================
 AgentNumber = 3;
-tSimTiR = 10; %Recording Alocation
+tSimTiR = 11; %Recording Alocation
 tTiStR = 0.1; %Recording Save
-VOpPoints = zeros(15000,1);
-VOpEscPoints = zeros(15000,1);
+VOpPoints = zeros(30000,1);
+VOpEscPoints = zeros(30000,1);
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -39,14 +39,15 @@ for tii = 1:AgentNumber
     RecExpVO(tii) = FDRecord('VO',tSimTiR,tTiStR,4); 
     
     
-    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,15000);
-    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,15000); %the point and AvoPlane? of escape
+    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,30000);
+    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,30000); %the point and AvoPlane? of escape
     RecDecision(tii) = FDRecord('VO',tSimTiR,tTiStR,6); %actually the decision - pointV (3), and AVO, and interupt?
     %RecVOpEsc1(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     %RecVOpEsc2(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     RecVOpNum(tii) = FDRecord('VO',tSimTiR,tTiStR,50); %all scalar number
     
     RecODist(tii) = FDRecord('ODist',tSimTiR,tTiStR,4); 
+    RecOFlag(tii) = FDRecord('ODist',tSimTiR,tTiStR,153);
 end
 %========================================================================
 
@@ -139,7 +140,7 @@ UVW_g = [2 -2/(3^0.5) -2/(3^0.5) -2;
          0 2/(3^0.5) 2/(3^0.5) 0];
 UVW_b = [2 2 2 2; 0 0 0 0; 0 0 0 0];
 VTP_g = [0 0 0 0;
-         0 54.7330-90 -(54.7330-90) 0;
+         0 atan2(1,0.5*2^0.5)*180/pi-90 -(atan2(1,0.5*2^0.5)*180/pi-90) 0;
          0 90-45 90-45 180]/180*pi;
 VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW_g(2,2),UVW_g(1,2))];
 VTP_g(:,3) = [0; -atan2(UVW_g(3,3),((UVW_g(2,3)^2+UVW_g(1,3)^2)^0.5)); atan2(UVW_g(2,3),UVW_g(1,3))];
@@ -243,8 +244,8 @@ while ElaTi < TimeEnd
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
         
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
-        sSS= CAS(ii).Decision
         RecODist(ii).AddRecord([CAS(ii).ObDist(1); CAS(ii).Interupt; CAS(ii).Decision(4); 0])
+        RecOFlag(ii).AddRecord([CAS(ii).CASFlag(1,:)'; CAS(ii).CASFlag(2,:)'; CAS(ii).CASFlag(3,:)'])
         
         ee = 1;
         ff = 1;
@@ -257,8 +258,9 @@ while ElaTi < TimeEnd
               for cc = 1:length(VOpPo) %many point
                   VOpPoints(dd) = CAS(ii).VOPv(1,cc,bb,aa);
                   VOpPoints(dd+1) = CAS(ii).VOPv(2,cc,bb,aa);
-                  VOpPoints(dd+2) = CAS(ii).VOpEscOp(cc,bb,aa);
-                  dd = dd+3;
+                  VOpPoints(dd+2) = CAS(ii).VOpNum(bb,aa);
+                  VOpPoints(dd+3) = CAS(ii).VOpEscOp(cc,bb,aa);
+                  dd = dd+4;
               end
            end
         end
@@ -281,7 +283,7 @@ while ElaTi < TimeEnd
 end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
-save Record RecXYZ_g RecUVW_g RecVTP_g RecODist AgentNumber Rsep
+save Record RecXYZ_g RecUVW_g RecVTP_g RecODist RecOFlag AgentNumber Rsep
 save RecordVO RecVOpVe RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================

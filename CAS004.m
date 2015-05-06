@@ -120,9 +120,6 @@ classdef CAS004< Computer
            
            MAC.CASFlag(4,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
            MAC.CASFlag(4,1) = sum(MAC.CASFlag(4,2:MAC.NumObs+1));
-           Aaa = MAC.CASFlag(1,1:MAC.NumObs+1);
-           Aaa = MAC.CASFlag(3,1:MAC.NumObs+1);
-           Aaa = MAC.CASFlag(4,1:MAC.NumObs+1);
            AngAvoPl = pi/2;
            VelAvo = MAC.VelGlo;
            AngAvoBod = 0;
@@ -178,10 +175,10 @@ classdef CAS004< Computer
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
            if MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(3,1) >= 1 %Imminent and inside VO (DIV?)
-              MAC.Interupt = 1; 
+              MAC.Interupt = 2; 
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
            elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
-              MAC.Interupt = 2;
+              MAC.Interupt = 1;
               MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]]; %stay on VelGlo...
            else
               MAC.Interupt = 0; 
@@ -297,7 +294,7 @@ classdef CAS004< Computer
                 end
                 
                 
-                chch = 0;
+                chch = 1;
                 if chch > 0
                     figure(15)
                     VOA = MAC.VOAp;
@@ -305,10 +302,12 @@ classdef CAS004< Computer
                     plot3([VOA(1,ii) VOB(1,1:round(end/4),ii) VOA(1,ii) VOB(1,round(end/4):round(end/2),ii) VOA(1,ii) VOB(1,round(end/2):round(3*end/4),ii) VOA(1,ii) VOB(1,round(3*end/4):end,ii)],...
                           [VOA(2,ii) VOB(2,1:round(end/4),ii) VOA(2,ii) VOB(2,round(end/4):round(end/2),ii) VOA(2,ii) VOB(2,round(end/2):round(3*end/4),ii) VOA(2,ii) VOB(2,round(3*end/4):end,ii)],...
                           [VOA(3,ii) VOB(3,1:round(end/4),ii) VOA(3,ii) VOB(3,round(end/4):round(end/2),ii) VOA(3,ii) VOB(3,round(end/2):round(3*end/4),ii) VOA(3,ii) VOB(3,round(3*end/4):end,ii)]); grid on; axis equal;
-                    %stopppp
-                    %hold on;
+                    
+                    hold on;
+                    
                 end
              end
+             stopppp
              MAC.CASFlag(3,1) = sum(MAC.CASFlag(3,2:MAC.NumObs+1)); %and the number of inclusion
         end
         
@@ -340,16 +339,15 @@ classdef CAS004< Computer
                     %3. if --> a point?actually would mean Vo is not on VO,or at the origin of vO 
                     kk = 1;
                     
-                    if abs(VOApVee(3)) > 0.0000001 %not degenerate case
+                    if abs(VOApVee(3)) > 0.00001 %not degenerate case
                         for jj = 1:length(MAC.TiVOBp)
-                            TiVOGl =VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
+                            TiVOGl =-VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
                             if isreal(TiVOGl) == 0
-                                ghjfrtgj
+                                Thetimeimaginer
                             end
-                            
-                            if -TiVOGl >= 0 && -TiVOGl <= 1 %elminating the hyperbolic or point beyond dvo
-                                MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
-                                MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
+                            if  TiVOGl >= 0 && TiVOGl <= 1 %eliminating the hyperbolic or point beyond dvo, if z=0 is inside the line
+                                MAC.VOPv(1,kk,oo,ii) = (VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
+                                MAC.VOPv(2,kk,oo,ii) = (VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
                                 MAC.VOPv(3,kk,oo,ii) = (MAC.VOPv(1,kk,oo,ii)^2+MAC.VOPv(2,kk,oo,ii)^2)^0.5; %Polar magnitude
                                 if abs(MAC.VOPv(1,kk,oo,ii)) > 0
                                     MAC.VOPv(4,kk,oo,ii) = atan2(MAC.VOPv(2,kk,oo,ii),MAC.VOPv(1,kk,oo,ii)); %Polar angle
@@ -357,14 +355,15 @@ classdef CAS004< Computer
                                     MAC.VOPv(4,kk,oo,ii) = sign(MAC.VOPv(2,kk,oo,ii))*pi/2;
                                 end
                                 kk = kk+1;
-                            else % to keep the same number of point, where should we put the ones not in the genetrix?
-                                MAC.VOPv(1,kk,oo,ii) = 0;
-                                MAC.VOPv(2,kk,oo,ii) = 0;
-                                MAC.VOPv(3,kk,oo,ii) = 0;
-                                MAC.VOPv(4,kk,oo,ii) = pi/2;
-                                kk = kk+1;
+
                             end
                             
+                        end
+                        
+                        if kk > 1
+                            for jj = kk:length(MAC.TiVOBp)
+                                MAC.VOPv(1:4,jj,oo,ii) = MAC.VOPv(1:4,kk-1,oo,ii);
+                            end
                         end
                         MAC.VOpNum(oo,ii) = kk-1;
                         
@@ -543,12 +542,12 @@ classdef CAS004< Computer
             
             
             chch =0; 
-            if chch > 0 &&  MAC.VOpIntNumUn(oo)==0
+            if chch > 0 
                 %figure(20)
                 coco = ['b';'m';'c';'k'];
                 for oo = 1:12
                     figure(20+oo)
-                    for ii = 1:MAC.NumObs-1
+                    for ii = 1:MAC.NumObs
                         plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii),['-d' coco(ii)]); grid on; axis equal; hold on;
                         for nn = 1:MAC.VOpNumInt(oo,ii)
                             plot(MAC.VOPv(1,MAC.VOpInt(nn,oo,ii),oo,ii),MAC.VOPv(2,MAC.VOpInt(nn,oo,ii),oo,ii),'*r')
