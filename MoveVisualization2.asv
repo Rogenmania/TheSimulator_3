@@ -7,6 +7,7 @@ VOpPoiN = VOpPoiX;
 VOpPoiS = VOpPoiX;
 for ii = 1:AgentNumber
     nn = 1;
+    oo = 1;
     for jj = 1:AgentNumber-1
         for kk = 1:length(VOpVee)
             for ll = 1:length(VOpPo)
@@ -17,6 +18,16 @@ for ii = 1:AgentNumber
                     VOpPoiY(ii,jj,kk,ll,mm) = RecVOpVe(ii).Data(nn+1,mm);
                     VOpPoiN(ii,jj,kk,ll,mm) = RecVOpVe(ii).Data(nn+2,mm);
                     VOpPoiS(ii,jj,kk,ll,mm) = RecVOpVe(ii).Data(nn+3,mm);
+                    if jj == 1 && ll == 1%so only one time calc
+                        VOpPoiA(ii,kk,1,mm) = RecVOpVe2(ii).Data(oo,mm);
+                        VOpPoiA(ii,kk,2,mm) = RecVOpVe2(ii).Data(oo+1,mm);
+                        oo = oo + 2;
+                    end
+                    if ll == 1 %across the agent
+                        VOpPoiVi(ii,jj,kk,1,mm) = RecVOpVe2(ii).Data(oo,mm);
+                        VOpPoiVi(ii,jj,kk,2,mm) = RecVOpVe2(ii).Data(oo+1,mm);
+                        oo = oo+2;
+                    end
                 end
                 nn = nn+4;
             end
@@ -34,21 +45,24 @@ for jj = 1:AgentNumber-1
         
         Poi(1,:) = VOpPoiX(1,jj,kk,:,1);
         Poi(2,:) = VOpPoiY(1,jj,kk,:,1);
-        VOpPol(kk) = line(Poi(1,:),Poi(2,:),'Color',Col(jj));
+        PoiTG(1) = VOpPoiA(ii,kk,1,1)
+        PoiTG(2) = VOpPoiA(ii,kk,2,1)
+        VOpPol(jj,kk) = line(Poi(1,:),Poi(2,:),'Color',Col(jj));
+        VOpTGPol(jj,kk) = line([0 PoiTG(1)],[0 PoiTG(2)],'Color',Col(jj));
         axis([0 3 -1 1]); hold on;
     end
 end
-
+dsv
 %move it?
 for mm = 2:RecVOpVe(1).Elapsed-1
     for jj = 1:AgentNumber-1
         for kk = 1:12
             PoiX(1,:) = VOpPoiX(1,jj,kk,:,mm);
             PoiX(2,:) = VOpPoiY(1,jj,kk,:,mm);
-            set(VOpPol(kk),'XData',PoiX(1,:),'YData',PoiX(2,:))    
+            set(VOpPol(jj,kk),'XData',PoiX(1,:),'YData',PoiX(2,:))    
             
         end
     end
-    pause(0.1)
+    pause(0.5)
 end
 

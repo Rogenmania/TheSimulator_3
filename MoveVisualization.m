@@ -1,4 +1,4 @@
-
+close all;
 load('Record.mat')
 
 %simplifying the names ===================================================
@@ -9,12 +9,14 @@ for ii = 1:AgentNumber
             XYZ_g(ii,kk,jj) = RecXYZ_g(ii).Data(kk,jj);
             UVW_g(ii,kk,jj) = RecUVW_g(ii).Data(kk,jj);
             VTP_g(ii,kk,jj) = RecVTP_g(ii).Data(kk,jj);
-            ODist(ii,jj) = RecODist(ii).Data(1,jj);
+            
             CInteru(ii,jj) = RecODist(ii).Data(2,jj);
             CDecis(ii,jj) = RecODist(ii).Data(3,jj);
             for kk = 1:AgentNumber-1
+                ODist(ii,kk,jj) = RecODist(ii).Data(kk,jj);
                 CImm(ii,kk,jj) = RecOFlag(ii).Data(1+kk,jj); %Flag 1
                 CInc(ii,kk,jj) = RecOFlag(ii).Data(103+kk,jj); %Flag 3
+                CDIV(ii,kk,jj) = RecOFlag(ii).Data(154+kk,jj); %Flag 4
             end
         end
     end
@@ -42,7 +44,7 @@ figure(10) %just to make sure..
 hold on; grid on; axis equal;
 set(gca,'ZDir','reverse','YDir','reverse','CameraPosition',[-62 101 -35],'CameraViewAngle',9,...
         'View',[-35.4711 15.846])
-axis([0 40 -20 20 -20 20])
+axis([0 20 -10 10 -10 10])
 ColSet = ['b'; 'r'; 'g'; 'm']; 
 
 ForTrckX = zeros(1,DatNum); 
@@ -109,74 +111,91 @@ for sii = 1:DatNum
     Rola(1,sii) = VTP_g(1,1,sii)*57.3;
     Rola(2,sii) = VTP_g(1,2,sii)*57.3;
     Rola(3,sii) = VTP_g(1,3,sii)*57.3;
-    Rola(4,sii) = CInteru(1,sii);
-    Rola(5,sii) = CDecis(1,sii)*57.3;
-    Roli(:,sii) = ODist(:,sii);
+    %Rola(4,sii) = CInteru(1,sii);
+    %Rola(5,sii) = CDecis(1,sii)*57.3;
+    
+   
     
     Rolu(1,sii) = UVW_g(1,1,sii);
     Rolu(2,sii) = UVW_g(1,2,sii);
     Rolu(3,sii) = UVW_g(1,3,sii);
-    Rolu(4,sii) = CInteru(1,sii);
-    Rolu(5,sii) = CDecis(1,sii)*57.3;
+    %Rolu(4,sii) = CInteru(1,sii);
+    %Rolu(5,sii) = CDecis(1,sii)*57.3;
     %disp(num2str(XYZ_g(2,:,sii)*57.3))
     %disp(num2str(UVW_g(2,:,sii)*57.3))
     
-    Interu(1,sii) = CInteru(1,sii);
-    Interu(2,sii) = CInteru(2,sii);
-    Interu(3,sii) = CInteru(3,sii);
+    for sjj = 1:AgentNumber
+        %Interu(sjj,sii) = CInteru(sjj,sii);
+        UVWpl(3*(sjj-1)+1,sii) = UVW_g(sjj,1,sii);
+        UVWpl(3*(sjj-1)+2,sii) = UVW_g(sjj,2,sii);
+        UVWpl(3*(sjj-1)+3,sii) = UVW_g(sjj,3,sii);
+        
+        VTPpl(3*(sjj-1)+1,sii) = VTP_g(sjj,1,sii);
+        VTPpl(3*(sjj-1)+2,sii) = VTP_g(sjj,2,sii);
+        VTPpl(3*(sjj-1)+3,sii) = VTP_g(sjj,3,sii);
+        
+        
+        for skk =1:AgentNumber-1         
+            Dista((sjj-1)*(AgentNumber-1)+skk,sii) = ODist(sjj,skk,sii);
+            Immin((sjj-1)*(AgentNumber-1)+skk,sii) = CImm(sjj,skk,sii);                
+            Inclu((sjj-1)*(AgentNumber-1)+skk,sii) = CInc(sjj,skk,sii);
+            DIV((sjj-1)*(AgentNumber-1)+skk,sii) = CDIV(sjj,skk,sii);
+        end
+    end
     pause(0.1)
-    
-    Immin(1,sii) = CImm(1,1,sii);
-    Immin(2,sii) = CImm(1,2,sii);
-    Immin(3,sii) = CImm(2,1,sii);
-    Immin(4,sii) = CImm(2,2,sii);
-    Immin(5,sii) = CImm(3,1,sii);
-    Immin(6,sii) = CImm(3,2,sii);
-    
-    Inclu(1,sii) = CInc(1,1,sii);
-    Inclu(2,sii) = CInc(1,2,sii);
-    Inclu(3,sii) = CInc(2,1,sii);
-    Inclu(4,sii) = CInc(2,2,sii);
-    Inclu(5,sii) = CInc(3,1,sii);
-    Inclu(6,sii) = CInc(3,2,sii);
-    
+
 end
 figure(13)
 plot(Rola(1,:),'b'); hold on;
 plot(Rola(2,:),'r');
 plot(Rola(3,:),'g');
-plot(Rola(4,:)*100,'k');
-plot(Rola(5,:),'m');
+
 grid on;
 
 figure(14)
 plot(Rolu(1,:),'b'); hold on;
 plot(Rolu(2,:),'r');
 plot(Rolu(3,:),'g');
-plot(Rolu(4,:)*5,'k');
-plot(Rolu(5,:),'m');
 grid on;
 
-figure(15)
-plot(Roli')
-grid on;
 
-figure(16)
-plot(Interu'); grid on;
 
-figure(17)
-subplot(3,1,1)
-plot(Immin(1:2,:)'); grid on;
-subplot(3,1,2)
-plot(Immin(3:4,:)'); grid on;
-subplot(3,1,3)
-plot(Immin(5:6,:)'); grid on;
+ColPlo ='brgmk';
+for aa = 1:AgentNumber
+    figure(14)
+    subplot(AgentNumber,1,aa)
+    plot(UVWpl(3*(aa-1)+1:3*aa,:)');grid on; hold on;
+    if aa == 1;    title('Global Velocity (UVW_g)'); end
+    
+    figure(15)
+    subplot(AgentNumber,1,aa)
+    plot(VTPpl(3*(aa-1)+1:3*aa,:)');grid on; hold on;
+    if aa == 1;    title('Global Attitude (VTP_g)'); end
+    
+    for bb = 1:AgentNumber-1
+        figure(16)
+        subplot(AgentNumber,1,aa)
+        plot(Dista((aa-1)*(AgentNumber-1)+bb,:)',ColPlo(bb)); grid on; hold on;
+        if aa == 1 && bb==1;    title('Distance Between'); end
+        
+        figure(17)
+        subplot(AgentNumber,1,aa)
+        plot(Immin((aa-1)*(AgentNumber-1)+bb,:)',ColPlo(bb)); grid on; hold on;
+        if aa == 1 && bb==1;    title('Imminent Flag'); end
+        
+        figure(18)
+        subplot(AgentNumber,1,aa)
+        plot(Inclu((aa-1)*(AgentNumber-1)+bb,:)',ColPlo(bb)); grid on; hold on;
+        if aa == 1 && bb==1;    title('VOIncluded Flag'); end
+        
+        figure(19)
+        subplot(AgentNumber,1,aa)
+        plot(DIV((aa-1)*(AgentNumber-1)+bb,:)',ColPlo(bb)); grid on; hold on;
+        if aa == 1 && bb==1;    title('DIVincluded Flag'); end
+        
 
-figure(18)
-subplot(3,1,1)
-plot(Inclu(1:2,:)'); grid on;
-subplot(3,1,2)
-plot(Inclu(3:4,:)'); grid on;
-subplot(3,1,3)
-plot(Inclu(5:6,:)'); grid on;%CInc
+    end
+end 
+   
+
 %========================================================================

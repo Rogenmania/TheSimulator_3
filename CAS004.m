@@ -78,11 +78,13 @@ classdef CAS004< Computer
         VODis = zeros(50,1)
         VOBAng = zeros(50,1)
         VOVRel = zeros(3,50)
+        VOVRel2 = zeros(3,50)
         VOAp = zeros(3,50)
         TiVOBp  %^the size of this need to be det in initial
         VOBp = zeros(3,37,50) %^the size of this need to be det in initial
         VOpVee 
         VOPv
+        VOPv2
         VOpNum
         VOpInt
         VOpNumInt
@@ -118,12 +120,11 @@ classdef CAS004< Computer
            %VOAvoPlaneTest(MAC);
            VOAvoPlane(MAC);
            
-           MAC.CASFlag(4,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
-           MAC.CASFlag(4,1) = sum(MAC.CASFlag(4,2:MAC.NumObs+1));
+           MAC.CASFlag(5,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
+           MAC.CASFlag(5,1) = sum(MAC.CASFlag(5,2:MAC.NumObs+1));
            AngAvoPl = pi/2;
            VelAvo = MAC.VelGlo;
            AngAvoBod = 0;
-           AngEsc = 0;
            SelAvoPl = 1;
 
            switch MAC.DecMode
@@ -174,10 +175,10 @@ classdef CAS004< Computer
            
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
-           if MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(3,1) >= 1 %Imminent and inside VO (DIV?)
+           if MAC.CASFlag(5,1)  >= 1  %there are one that are imminent and inside VO (DIV?)
               MAC.Interupt = 2; 
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
-           elseif MAC.CASFlag(1,1)  >= 1 %&& MAC.CASFlag(3,1) ~= 1
+           elseif MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(4,1) < 1; %imminent but outside DIV, even one
               MAC.Interupt = 1;
               MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; SelAvoPl; AngAvoBod]]; %stay on VelGlo...
            else
@@ -260,7 +261,7 @@ classdef CAS004< Computer
              for ii = 1:MAC.NumObs
                 %lets follow the paper
                 %The VO-cone properties
-                MAC.VORad(ii) = MAC.SepRad(4,ii)*(MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)^0.5/MAC.ObDist(ii);
+                MAC.VORad(ii) = 1.1*MAC.SepRad(4,ii)*(MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)^0.5/MAC.ObDist(ii);
                 MAC.VODis(ii) = (MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)/MAC.ObDist(ii); %fourth SepRad, since we are working in EscapeSphr
                 if abs(MAC.VODis(ii)) > 0
                     MAC.VOBAng(ii) = atan2(MAC.VORad(ii),MAC.VODis(ii));
@@ -272,18 +273,34 @@ classdef CAS004< Computer
                 if MAC.ObDist(ii) < MAC.SepRad(4,ii)
                     break;
                 end
-                
+
                 %turning the RelVels to negate the ObsAng
                 MAC.VOVRel(:,ii) = MAC.RotMat(MAC.ObAngBod(:,ii),3)*MAC.RelVelBod(:,ii);
-                %determining the inclusion
-                if MAC.VOVRel(1,ii) > 0 && ...
-                  ((MAC.VOVRel(2,ii)^2+MAC.VOVRel(3,ii)^2)^0.5)/(MAC.VOVRel(1,ii)) < (MAC.VORad(ii))/(MAC.VODis(ii))
+                
+                AngDiv = MAC.Vect2Angls(MAC.RotMat([0; MAC.ObAngBod(2:3,ii)],3)); %angles
+                MAC.VOVRel2(:,ii) = MAC.RotMat(-AngDiv,3)*MAC.RelVelBod(:,ii);
+                
+                %determining the inclusion VO
+                if MAC.VOVRel(1,ii) >= 0 && ...
+                  ((MAC.VOVRel(2,ii)^2+MAC.VOVRel(3,ii)^2)^0.5)/(MAC.VOVRel(1,ii)) <= (MAC.VORad(ii))/(MAC.VODis(ii))
                   %just use the third CASFlag
                   MAC.CASFlag(3,ii+1) = 1;
                 else
-                  MAC.CASFlag(3,ii+1) = 0;
-                    
+                  MAC.CASFlag(3,ii+1) = 0; 
                 end
+                
+                %determining the inclusion DIV
+                if MAC.VOVRel2(1,ii) < 0 || ...
+                  (MAC.VOVRel2(3,ii))/(MAC.VOVRel2(1,ii)) > (MAC.VORad(ii))/(MAC.VODis(ii))
+                  %just use the third CASFlag
+                  MAC.CASFlag(4,ii+1) = 1;
+                else
+                  MAC.CASFlag(4,ii+1) = 0; 
+                end
+                
+                %turning the RelVels so the Vi is on XY?
+                
+                MAC.VOVRel2(:,ii) = MAC.RotMat(MAC.ObVelABod(:,ii),-3)*MAC.RelVelBod(:,ii);
 
                 %Now for each obstacle, we are going to define the A and B
                 MAC.VOAp(:,ii) =  MAC.ObVelBod(:,ii);
@@ -294,7 +311,7 @@ classdef CAS004< Computer
                 end
                 
                 
-                chch = 1;
+                chch = 0;
                 if chch > 0
                     figure(15)
                     VOA = MAC.VOAp;
@@ -307,8 +324,14 @@ classdef CAS004< Computer
                     
                 end
              end
-             stopppp
              MAC.CASFlag(3,1) = sum(MAC.CASFlag(3,2:MAC.NumObs+1)); %and the number of inclusion
+             MAC.CASFlag(4,1) = sum(MAC.CASFlag(4,2:MAC.NumObs+1)); %and the number of inclusion
+             
+             %need the diverging.... --> should be CASFlag 4. Actually is
+             %determined (right now ) from the avoidance plane. can we
+             %determined it here? --> but it is different for eah AvoPlane?
+             %the rel vel in the cc, plus the Vi, should be included?
+             
         end
         
         function VOAvoPlane(MAC)
@@ -322,6 +345,16 @@ classdef CAS004< Computer
                                  0 cos(MAC.VOpVee(oo)) sin(MAC.VOpVee(oo));
                                  0 -sin(MAC.VOpVee(oo)) cos(MAC.VOpVee(oo))];
                     VOApVee = RotVirRoll*MAC.VOAp(:,ii);
+                    MAC.VOPv2(2*ii+1,oo) = VOApVee(1);
+                    MAC.VOPv2(2*ii+2,oo) = VOApVee(2);
+                    
+                    if ii == 1
+                        VOTgVee = RotVirRoll*MAC.MatE2B*MAC.TGoVel; %the togoal on Avoplane
+                        MAC.VOPv2(1,oo) = VOTgVee(1);
+                        MAC.VOPv2(2,oo) = VOTgVee(2);
+                        Bb = VOTgVee(1);
+                        Cc = VOTgVee(2);
+                    end
                     
                     for pp = 1:length(MAC.TiVOBp)
                         VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
@@ -422,7 +455,6 @@ classdef CAS004< Computer
                         for pp = 1:HalfPo*2-1
                             MAC.VOPv(3,pp,oo,ii) = (MAC.VOPv(1,pp,oo,ii)^2+MAC.VOPv(2,pp,oo,ii)^2)^0.5; %Polar magnitude
                             if abs(MAC.VOPv(1,pp,oo,ii)) > 0
-                                aaa  = MAC.VOPv(2,pp,oo,ii)/MAC.VOPv(1,pp,oo,ii);
                                 MAC.VOPv(4,pp,oo,ii) = atan2(MAC.VOPv(2,pp,oo,ii),MAC.VOPv(1,pp,oo,ii)); %Polar angle
                             else
                                 MAC.VOPv(4,pp,oo,ii) = sign(MAC.VOPv(2,pp,oo,ii))*pi/2;
