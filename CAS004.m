@@ -145,17 +145,34 @@ classdef CAS004< Computer
                    %smallest angle to the right of escape (4), with smallest dcc biggest but lower than Vo (3), ?
                    %hence, the smallest positive (4). actually, only one..
                    %what if multiplication?
-                   for oo = 1:length(MAC.VOpVee)
-                       for ii = 1:MAC.VOpIntNumUn(oo)
-                           if MAC.VOpIntUn(4,ii,oo) >= 0
-                               if MAC.VOpIntUn(4,ii,oo) < AngAvoPl
-                                   VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
-                                   AngAvoPl = MAC.VOpIntUn(4,ii,oo);
-                                   SelAvoPl = MAC.VOpVee(oo);
+                   if MAC.Interupt == 0
+                       for oo = 1:length(MAC.VOpVee)
+                           for ii = 1:MAC.VOpIntNumUn(oo)
+                               if MAC.VOpIntUn(4,ii,oo) >= 0
+                                   if MAC.VOpIntUn(4,ii,oo) < AngAvoPl
+                                       VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
+                                       AngAvoPl = MAC.VOpIntUn(4,ii,oo);
+                                       SelAvoPl = oo;
+                                   end
                                end
                            end
                        end
+                   else
+                       for ii = 1:MAC.VOpIntNumUn(MAC.Decision(5))
+                           if MAC.VOpIntUn(4,ii,MAC.Decision(5)) >= 0
+                               if MAC.VOpIntUn(4,ii,MAC.Decision(5)) < AngAvoPl
+                                   VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,MAC.Decision(5)); ...
+                                                        MAC.VOpIntUn(8,ii,MAC.Decision(5)); ...
+                                                        MAC.VOpIntUn(9,ii,MAC.Decision(5))];
+                                   AngAvoPl = MAC.VOpIntUn(4,ii,MAC.Decision(5));
+                                   SelAvoPl = MAC.Decision(5);
+                               end
+                           end
+                       end
+                       
                    end
+                   
+                   
                    
                    %MAC.Decision(:,1) = [VelAvo; [AngAvoPl; 0; 0]]; % its already global velocity
                    %then dont change the speed nor the AvoPlane before it
@@ -175,7 +192,7 @@ classdef CAS004< Computer
            
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
-           if MAC.CASFlag(5,1)  >= 1  %there are one that are imminent and inside VO (DIV?)
+           if MAC.CASFlag(5,1)  >= 1  %there are one that are imminent AND inside VO (DIV?)
               MAC.Interupt = 2; 
               MAC.Decision(:,1) = [VelAvo; [AngAvoPl; SelAvoPl; AngAvoBod]];
            elseif MAC.CASFlag(1,1)  >= 1 && MAC.CASFlag(4,1) < 1; %imminent but outside DIV, even one

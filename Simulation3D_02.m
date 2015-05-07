@@ -8,12 +8,12 @@ clear all; clc; close all;
 
 %%
 %Making the world.... making the object==================================
-AgentNumber = 3;
-tSimTiR = 11; %Recording Alocation
+AgentNumber = 8;
+tSimTiR = 15; %Recording Alocation
 tTiStR = 0.1; %Recording Save
-VOpPoints = zeros(30000,1);
+VOpPoints = zeros(60000,1);
 VOpPoints2 = zeros(10000,1);
-VOpEscPoints = zeros(30000,1);
+VOpEscPoints = zeros(60000,1);
 load('CASData.mat'); %the velocity and distance data of the spheres
 for tii = 1:AgentNumber
     Agent(tii) = UAV(1,1,1,1,0,...
@@ -40,9 +40,9 @@ for tii = 1:AgentNumber
     RecExpVO(tii) = FDRecord('VO',tSimTiR,tTiStR,4); 
     
     
-    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,30000);
+    RecVOpVe(tii) = FDRecord('VO',tSimTiR,tTiStR,60000);
     RecVOpVe2(tii) = FDRecord('VO',tSimTiR,tTiStR,10000); %Vix, Viy, VTgoal across agent(50) across VOPvee(50)
-    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,30000); %the point and AvoPlane? of escape
+    RecVOpEscOp(tii) = FDRecord('VO',tSimTiR,tTiStR,60000); %the point and AvoPlane? of escape
     RecDecision(tii) = FDRecord('VO',tSimTiR,tTiStR,6); %actually the decision - pointV (3), and AVO, and interupt?
     %RecVOpEsc1(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
     %RecVOpEsc2(tii) = FDRecord('VO',tSimTiR,tTiStR,200000);
@@ -148,6 +148,11 @@ VTP_g(:,2) = [0; -atan2(UVW_g(3,2),((UVW_g(2,2)^2+UVW_g(1,2)^2)^0.5)); atan2(UVW
 VTP_g(:,3) = [0; -atan2(UVW_g(3,3),((UVW_g(2,3)^2+UVW_g(1,3)^2)^0.5)); atan2(UVW_g(2,3),UVW_g(1,3))];
 XYZsta_g = XYZ_g - UVW_g*Tifin/1000;
 XYZfin_g = XYZ_g + UVW_g*Tifin;
+
+DecMode = [1; 1; 1; 1];
+ADist = [10; 10; 10; 10];
+
+Cube8;
 %%
 
 %if you want scenario visualization======================================
@@ -161,10 +166,10 @@ NTurnRate = 10/180*pi;
 GoalvPath = 0.01;
 
 ATurnRate = 10/180*pi;
-ADist = [10; 10; 10; 10];
-VOpPo = 0:2*pi/36:2*pi; 
+
+VOpPo = 0:2*pi/144:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
-DecMode = [1; 1; 1; 1];
+
 for tii = 1:AgentNumber
     Agent(tii).SetInit(XYZ_g(:,tii),UVW_b(:,tii),VTP_g(:,tii))
     %Generate Sensor accordingly (Acc,Err,Rang,iData)
@@ -292,7 +297,7 @@ end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist RecOFlag AgentNumber Rsep
-save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
+%save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%

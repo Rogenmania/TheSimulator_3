@@ -44,8 +44,8 @@ figure(10) %just to make sure..
 hold on; grid on; axis equal;
 set(gca,'ZDir','reverse','YDir','reverse','CameraPosition',[-62 101 -35],'CameraViewAngle',9,...
         'View',[-35.4711 15.846])
-axis([0 20 -10 10 -10 10])
-ColSet = ['b'; 'r'; 'g'; 'm']; 
+axis([-10 10 -10 10 -10 10])
+ColSet = ['b'; 'r'; 'g'; 'm';'b'; 'r'; 'g'; 'm']; 
 
 ForTrckX = zeros(1,DatNum); 
 ForTrckY = zeros(1,DatNum);
@@ -160,7 +160,7 @@ grid on;
 
 
 
-ColPlo ='brgmk';
+ColPlo ='brgmkbrgmk';
 for aa = 1:AgentNumber
     figure(14)
     subplot(AgentNumber,1,aa)
