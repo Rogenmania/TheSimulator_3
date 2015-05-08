@@ -10,7 +10,7 @@ clear all; clc; close all;
 %Making the world.... making the object==================================
 AgentNumber = 8;
 tSimTiR = 15; %Recording Alocation
-tTiStR = 0.1; %Recording Save
+tTiStR = 0.2; %Recording Save
 VOpPoints = zeros(60000,1);
 VOpPoints2 = zeros(10000,1);
 VOpEscPoints = zeros(60000,1);
@@ -199,7 +199,7 @@ Agent(2).SetInit(XYZ_g(:,2)+[0;0;0],[2;0;0],VTP_g(:,2))
 %just solve the navigation equation in every time step?
 ElaTi = 0;
 TimeEnd = RecXYZ_g(1).TimeEnd;
-TiSt = RecXYZ_g(1).TimeStep;
+TiSt = 0.1;
 %TiSt = 1;
 ttt=300;
 dde = 0;
@@ -246,6 +246,9 @@ while ElaTi < TimeEnd
     %Update and Record states --> only after all Vehicles decide
     for ii = 1:AgentNumber
         %if there are collision, stop immediately?
+        
+        disp([num2str(ElaTi) '  '  num2str(mod(ElaTi,1))])
+        if abs(mod((round(ElaTi*100))/100,tTiStR)) <= 0.000001
         RecXYZ_g(ii).AddRecord(Agent(ii).GloPos)
         RecUVW_g(ii).AddRecord(Agent(ii).GloVel)
         RecVTP_g(ii).AddRecord(Agent(ii).GloAtt) 
@@ -254,7 +257,6 @@ while ElaTi < TimeEnd
         
         dd = 1;
         ee = 1;
-
         %saving private ryan
         for bb = 1:length(VOpVee) %many avo pl
             VOpPoints2(ee) = CAS(ii).VOPv2(1,bb);
@@ -277,17 +279,18 @@ while ElaTi < TimeEnd
               end
            end
         end
-         
+        disp('hahahaha')
         RecVOpVe(ii).AddRecord(VOpPoints);
         RecVOpVe2(ii).AddRecord(VOpPoints2);
         RecVOpEscOp(ii).AddRecord(VOpEscPoints);
+        end
 
         if ii == 2
             Aa2 = Agent(ii).GloAtt;
             Bb2 = Agent(ii).GloPos;
         end
 
-        Agent(ii).MoveTimeD_3(RecXYZ_g(1).TimeStep)
+        Agent(ii).MoveTimeD_3(TiSt)
 
         dde=0;
     end
@@ -297,7 +300,7 @@ end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist RecOFlag AgentNumber Rsep
-%save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
+save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%

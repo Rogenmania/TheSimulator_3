@@ -91,6 +91,9 @@ classdef CAS004< Computer
         VOpIntUn
         VOpIntNumUn
         VOpEscOp
+        VOPvIntAll %the intersection -- the solution
+        VOPvInt
+        VOPvIntNum
         
         DecMode
         DecFiAvoPl
@@ -118,7 +121,8 @@ classdef CAS004< Computer
                  %Only not avoid
            VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....      
            %VOAvoPlaneTest(MAC);
-           VOAvoPlane(MAC);
+           VOAvoPlane2(MAC);
+           VOAPSolution(MAC)
            
            MAC.CASFlag(5,2:MAC.NumObs+1) = MAC.CASFlag(1,2:MAC.NumObs+1).*MAC.CASFlag(3,2:MAC.NumObs+1); %this is imminnent and inclusing
            MAC.CASFlag(5,1) = sum(MAC.CASFlag(5,2:MAC.NumObs+1));
@@ -147,24 +151,23 @@ classdef CAS004< Computer
                    %what if multiplication?
                    if MAC.Interupt == 0
                        for oo = 1:length(MAC.VOpVee)
-                           for ii = 1:MAC.VOpIntNumUn(oo)
-                               if MAC.VOpIntUn(4,ii,oo) >= 0
-                                   if MAC.VOpIntUn(4,ii,oo) < AngAvoPl
-                                       VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,oo); MAC.VOpIntUn(8,ii,oo); MAC.VOpIntUn(9,ii,oo)];
-                                       AngAvoPl = MAC.VOpIntUn(4,ii,oo);
+                           for ii = 1:MAC.VOPvIntNum(oo)
+                               if MAC.VOPvInt(4,ii,oo) >= 0
+                                   if MAC.VOPvInt(4,ii,oo) < AngAvoPl
+                                       VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,oo); MAC.VOPvInt(6,ii,oo); MAC.VOPvInt(7,ii,oo)];
+                                       AngAvoPl = MAC.VOPvInt(4,ii,oo);
                                        SelAvoPl = oo;
                                    end
                                end
                            end
                        end
                    else
-                       for ii = 1:MAC.VOpIntNumUn(MAC.Decision(5))
-                           if MAC.VOpIntUn(4,ii,MAC.Decision(5)) >= 0
-                               if MAC.VOpIntUn(4,ii,MAC.Decision(5)) < AngAvoPl
-                                   VelAvo = MAC.MatB2E*[MAC.VOpIntUn(7,ii,MAC.Decision(5)); ...
-                                                        MAC.VOpIntUn(8,ii,MAC.Decision(5)); ...
-                                                        MAC.VOpIntUn(9,ii,MAC.Decision(5))];
-                                   AngAvoPl = MAC.VOpIntUn(4,ii,MAC.Decision(5));
+                       %on the SelAvoPl, MAC.Decision(5)
+                       for ii = 1:MAC.VOPvIntNum(MAC.Decision(5))
+                           if MAC.VOPvInt(4,ii,MAC.Decision(5)) >= 0
+                               if MAC.VOPvInt(4,ii,MAC.Decision(5)) < AngAvoPl
+                                   VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,MAC.Decision(5)); MAC.VOPvInt(6,ii,MAC.Decision(5)); MAC.VOPvInt(7,ii,MAC.Decision(5))];
+                                   AngAvoPl = MAC.VOPvInt(4,ii,MAC.Decision(5));
                                    SelAvoPl = MAC.Decision(5);
                                end
                            end
@@ -519,6 +522,27 @@ classdef CAS004< Computer
                         end
                     end
                     MAC.VOpNumInt(oo,ii) = mm-1;
+                    
+                    %two point index is found.. use it to find the vel
+                    %intersect
+                    Xx1 = MAC.VOPv(1,ll,oo,ii);
+                    Xx2 = MAC.VOPv(1,lll,oo,ii);
+                    Yy1 = MAC.VOPv(2,ll,oo,ii);
+                    Yy2 = MAC.VOPv(2,lll,oo,ii);
+                    Mpol = (Yy2-Yy1)/(Xx2-Xx1);
+                    Apol = Mpol^2+1;
+                    Bpol = 2*Mpol*(Yy1+Xx1);
+                    Cpol = (Mpol*Xx1)^2-2*Mpol*Xx1*Yy1+Yy1^2-MAC.VelBo(1)^2;
+                    %the ABC will always have solution since...
+                    XInt = (-Bpol+(Bpol^2-4*Apol*Cpol)^0.5)/(2*Apol);
+                    YInt = Mpol*(XInt-Xx1)-Yy1;
+                    if (XInt-Xx1)*(XInt-Xx2) > 0 || (YInt-Yy1)*(YInt-Yy2) > 0 %because if its between, should be negative
+                        XInt = (-Bpol-(Bpol^2-4*Apol*Cpol)^0.5)/(2*Apol); %the other intersection
+                        YInt = Mpol*(XInt-Xx1)-Yy1;
+                    end
+                    %this XInt and YInt is the real esc point (without
+                    %speed change) still need to be elimiated if it is
+                    %inside a polygon.
                 end
             end
             
@@ -581,6 +605,8 @@ classdef CAS004< Computer
                            MAC.VOpIntUn(12,nn,oo) = 0*MAC.VOpIntUn(5,nn,oo)-sin(-MAC.VOpVee(oo))*MAC.VOpIntUn(6,nn,oo)+0;
                            
                            MAC.VOpEscOp(MAC.VOpInt(mm,oo,ii),oo,ii) = 2; % 2 index for global sol entire oo
+                           
+                           
                            nn = nn+1;
                            
                         end
@@ -616,6 +642,306 @@ classdef CAS004< Computer
                     for jj = 1:MAC.VOpIntNumUn(oo)
                         plot([0 MAC.VOpIntUn(1,jj,oo)],[0 MAC.VOpIntUn(2,jj,oo)],'--g','linewidth',1)
                     end
+                end
+                stopppp
+                
+            end
+            
+        end
+        
+        function VOAvoPlane2(MAC)
+            %actually only need to run if it is included in the VO3D and imminent....
+            %it need to combined all points from all obstacles.
+            for ii = 1:MAC.NumObs
+                %We need access to VOAp and VOBp, and other VO properties
+                VOBpVee = zeros(3,length(MAC.TiVOBp));
+                for oo = 1:length(MAC.VOpVee)
+                    RotVirRoll =[1 0 0; %actually can be calc in beginnig (init)
+                                 0 cos(MAC.VOpVee(oo)) sin(MAC.VOpVee(oo));
+                                 0 -sin(MAC.VOpVee(oo)) cos(MAC.VOpVee(oo))];
+                    VOApVee = RotVirRoll*MAC.VOAp(:,ii);
+                    MAC.VOPv2(2*ii+1,oo) = VOApVee(1);
+                    MAC.VOPv2(2*ii+2,oo) = VOApVee(2);
+                    
+                    if ii == 1
+                        VOTgVee = RotVirRoll*MAC.MatE2B*MAC.TGoVel; %the togoal on Avoplane
+                        MAC.VOPv2(1,oo) = VOTgVee(1);
+                        MAC.VOPv2(2,oo) = VOTgVee(2);
+                        Bb = VOTgVee(1);
+                        Cc = VOTgVee(2);
+                    end
+                    
+                    for pp = 1:length(MAC.TiVOBp)
+                        VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
+                        
+                        if isreal(VOBpVee(:,pp)) == 0 
+                           sdgvsdv
+                        end
+                    end
+
+                    %for every point (t), jj. But remember, not all t result in
+                    %a valid point in VOp.
+                    %and to anticipate degenerate cases
+                    %1. if VOApVee is on the AvoPlane --> VOApVee(3) = 0;--> a triangle?
+                    %2. if --> a line? actually would mean Vo is not on VO, or is on the egde
+                    %3. if --> a point?actually would mean Vo is not on VO,or at the origin of vO 
+                    kk = 1;
+                    
+                    if abs(VOApVee(3)) > 0.00001 %not degenerate case
+                        for jj = 1:length(MAC.TiVOBp)
+                            TiVOGl =-VOApVee(3)/(VOBpVee(3,jj)-VOApVee(3)); %genetrix line time
+                            if isreal(TiVOGl) == 0
+                                Thetimeimaginer
+                            end
+                            if  TiVOGl >= 0 && TiVOGl <= 1 %eliminating the hyperbolic or point beyond dvo, if z=0 is inside the line
+                                MAC.VOPv(1,kk,oo,ii) = (VOBpVee(1,jj)-VOApVee(1))*TiVOGl+VOApVee(1);
+                                MAC.VOPv(2,kk,oo,ii) = (VOBpVee(2,jj)-VOApVee(2))*TiVOGl+VOApVee(2);
+                                MAC.VOPv(3,kk,oo,ii) = (MAC.VOPv(1,kk,oo,ii)^2+MAC.VOPv(2,kk,oo,ii)^2)^0.5; %Polar magnitude
+                                if abs(MAC.VOPv(1,kk,oo,ii)) > 0
+                                    MAC.VOPv(4,kk,oo,ii) = atan2(MAC.VOPv(2,kk,oo,ii),MAC.VOPv(1,kk,oo,ii)); %Polar angle
+                                else
+                                    MAC.VOPv(4,kk,oo,ii) = sign(MAC.VOPv(2,kk,oo,ii))*pi/2;
+                                end
+                                kk = kk+1;
+
+                            end
+                            
+                        end
+                        
+                        if kk > 1
+                            for jj = kk:length(MAC.TiVOBp)
+                                MAC.VOPv(1:4,jj,oo,ii) = MAC.VOPv(1:4,kk-1,oo,ii);
+                            end
+                        end
+                        MAC.VOpNum(oo,ii) = kk-1;
+                        
+                    else %degenerate case --> triangle
+                        %first point is the VOApVee it self
+                        MAC.VOPv(1,1,oo,ii) = VOApVee(1);
+                        MAC.VOPv(2,1,oo,ii) = VOApVee(2);
+                        
+                        %what the end (half and half +1) point?
+                        %the intersection of the Bvo with the AVOplane.
+                        %same way with deciding the escape route... first
+                        %finding a consecutive segment that went through z
+                        %= 0
+                        if mod(length(MAC.TiVOBp),2) == 0 %even numbe rf point
+                            kk = length(MAC.TiVOBp)/2;
+                            HalfPo = length(MAC.TiVOBp)/2;
+                        else
+                            kk = (length(MAC.TiVOBp)-1)/2;
+                            HalfPo = (length(MAC.TiVOBp)-1)/2;
+                        end
+
+                        for jj = 1:length(MAC.TiVOBp)
+                            if jj == length(MAC.TiVOBp) %the end point
+                               jjj = 1; 
+                            else
+                               jjj = jj+1;
+                            end
+
+                            if VOBpVee(3,jj)*VOBpVee(3,jjj) < 0
+                                TiVOGl = VOBpVee(3,jjj)/(VOBpVee(3,jj)-VOBpVee(3,jjj));
+                                MAC.VOPv(1,kk,oo,ii) = -(VOBpVee(1,jj)-VOBpVee(1,jjj))*TiVOGl+VOBpVee(1,jjj);
+                                MAC.VOPv(2,kk,oo,ii) = -(VOBpVee(2,jj)-VOBpVee(2,jjj))*TiVOGl+VOBpVee(2,jjj);
+                                kk = kk+1;
+                            elseif VOBpVee(3,jj) == 0
+                                MAC.VOPv(1,kk,oo,ii) = VOBpVee(1,jj);
+                                MAC.VOPv(2,kk,oo,ii) = VOBpVee(2,jj);
+                                kk = kk+1;
+                            end
+                        end
+
+                        %iyhgiu
+                        %^above should always result 2 point!25,26 (convex)
+                        %NOW put 25 (half length(MAC.TiVOBp) point evenly? on 
+                        %each side --> or more packed on x smaller than
+                        %2*Vo?
+                        for ll = 2:(HalfPo-1)
+                            MAC.VOPv(1,ll,oo,ii) = (MAC.VOPv(1,HalfPo,oo,ii)-MAC.VOPv(1,1,oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(1,1,oo,ii);
+                            MAC.VOPv(2,ll,oo,ii) = (MAC.VOPv(2,HalfPo,oo,ii)-MAC.VOPv(2,1,oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(2,1,oo,ii);
+
+                            MAC.VOPv(1,ll+HalfPo,oo,ii) = (MAC.VOPv(1,1,oo,ii)-MAC.VOPv(1,(HalfPo+1),oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(1,(HalfPo+1),oo,ii);
+                            MAC.VOPv(2,ll+HalfPo,oo,ii) = (MAC.VOPv(2,1,oo,ii)-MAC.VOPv(2,(HalfPo+1),oo,ii))*(ll-1)/(HalfPo-1)+MAC.VOPv(2,(HalfPo+1),oo,ii);
+
+                        end
+                        MAC.VOpNum(oo,ii) = HalfPo*2-1;
+                        %completing no 3 and 4
+                        for pp = 1:HalfPo*2-1
+                            MAC.VOPv(3,pp,oo,ii) = (MAC.VOPv(1,pp,oo,ii)^2+MAC.VOPv(2,pp,oo,ii)^2)^0.5; %Polar magnitude
+                            if abs(MAC.VOPv(1,pp,oo,ii)) > 0
+                                MAC.VOPv(4,pp,oo,ii) = atan2(MAC.VOPv(2,pp,oo,ii),MAC.VOPv(1,pp,oo,ii)); %Polar angle
+                            else
+                                MAC.VOPv(4,pp,oo,ii) = sign(MAC.VOPv(2,pp,oo,ii))*pi/2;
+                            end
+                        end
+                        
+                        
+                        %=================================================
+                        chck = 0;
+                        if chck > 0
+                            figure(5)
+                            plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii)); hold on;
+                            plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'or','MarkerSize',10)
+                            plot(MAC.VOPv(1,HalfPo,oo,ii),MAC.VOPv(2,HalfPo,oo,ii),'ob','MarkerSize',10)
+                            plot(MAC.VOPv(1,HalfPo+1,oo,ii),MAC.VOPv(2,HalfPo+1,oo,ii),'og','MarkerSize',10)
+                            plot(MAC.VOPv(1,MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,HalfPo*2-1,oo,ii),'om','MarkerSize',10)  
+                        end
+                        %================================================
+                    end
+                end
+            end
+        end
+          
+        function VOAPSolution(MAC)
+            for oo = 1:length(MAC.VOpVee)
+                mm = 1; %index the two point of segemnt solution on oo
+                rr = 1; %index number of solution on oo that is not included
+                ss = 1; %index number of solution on oo
+                for ii = 1:MAC.NumObs
+                    for ll = 1:MAC.VOpNum(oo,ii) 
+                        %a search for two points closest to
+                        %intersection (R ~ Vo). Two ways, pos and neg The
+                        %search is for all point to take account every
+                        %cases of intersection point. Two point is recorded
+                        %if (VOp(t)-Vo)*(VOp(t+1)-Vo) < 0 only one is
+                        %negative
+                        if ll == MAC.VOpNum(oo,ii)
+                            lll = 1;
+                        else
+                            lll = ll+1;
+                        end
+                        if (MAC.VOPv(3,ll,oo,ii)-MAC.VelBo(1))*(MAC.VOPv(3,lll,oo,ii)-MAC.VelBo(1)) <= 0
+                            %for visualizations
+                            MAC.VOpInt(mm,oo,ii) = ll; %recorded ll is the index of escape route of VOPv
+                            MAC.VOpInt(mm+1,oo,ii) = lll;
+                            MAC.VOpEscOp(ll,oo,ii) = 1;
+                            mm = mm+2;
+                            
+                            %on the segment that intersecting
+                            %two point index is found.. use it to find the vel
+                            %intersect                           
+                            Xx1 = MAC.VOPv(1,ll,oo,ii);
+                            Xx2 = MAC.VOPv(1,lll,oo,ii);
+                            Yy1 = MAC.VOPv(2,ll,oo,ii);
+                            Yy2 = MAC.VOPv(2,lll,oo,ii);
+                            if (Xx2-Xx1) == 0
+                                XInt = Xx1;
+                                YInt = (MAC.VelBo(1)^2-XInt^2)^0.5;
+                                if (XInt-Xx1)*(XInt-Xx2) > 0 || (YInt-Yy1)*(YInt-Yy2) > 0 
+                                    YInt = -YInt;
+                                end
+                                MAC.VOPvIntAll(1,ss,oo) = XInt;
+                                MAC.VOPvIntAll(2,ss,oo) = YInt;
+                                ss = ss+1;
+                            elseif (Yy2-Yy1) == 0
+                                YInt = Yy1;
+                                XInt = (MAC.VelBo(1)^2-YInt^2)^0.5;
+                                if (XInt-Xx1)*(XInt-Xx2) > 0 || (YInt-Yy1)*(YInt-Yy2) > 0 
+                                    XInt = -XInt;
+                                end
+                                MAC.VOPvIntAll(2,ss,oo) = YInt;
+                                MAC.VOPvIntAll(1,ss,oo) = XInt;
+                                ss = ss+1;
+                            else
+                                Mpol = (Yy2-Yy1)/(Xx2-Xx1);
+                                Apol = Mpol^2+1;
+                                Bpol = -2*Mpol^2*Xx1+2*Mpol*Yy1;                               
+                                Cpol = (Mpol*Xx1)^2-2*Mpol*Xx1*Yy1+Yy1^2-MAC.VelBo(1)^2;
+                                %the ABC will always have solution since...
+                                XInt = (-Bpol+(Bpol^2-4*Apol*Cpol)^0.5)/(2*Apol);
+                                YInt = Mpol*(XInt-Xx1)+Yy1;
+                                if (XInt-Xx1)*(XInt-Xx2) > 0 || (YInt-Yy1)*(YInt-Yy2) > 0 %because if its between, should be negative
+                                    XInt = (-Bpol-(Bpol^2-4*Apol*Cpol)^0.5)/(2*Apol); %the other intersection
+                                    YInt = Mpol*(XInt-Xx1)+Yy1;
+                                end
+                                MAC.VOPvIntAll(2,ss,oo) = YInt;
+                                MAC.VOPvIntAll(1,ss,oo) = XInt;
+                                ss = ss+1;
+                            end
+                            
+                            for qq = 1:MAC.NumObs
+                               if qq~=ii %not testing with its own polygon
+                                  InOut = 0;
+                                    for kk = 1:MAC.VOpNum(oo,qq)
+                                        %if MAC.VOpNum(oo,qq) <= MAC.VelBo(1) %just to be efficient
+                                            if kk == MAC.VOpNum(oo,qq) %last point
+                                                kkk = 1;
+                                            else
+                                                kkk = kk+1;
+                                            end
+                                            if (MAC.VOPv(2,kk,oo,qq)-YInt)*...
+                                                    (MAC.VOPv(2,kkk,oo,qq)-YInt) <= 0 
+                                                %eq => (y1-y)/(y1-y2) = (x1-x)/(x1-x2)
+                                                XInt2=MAC.VOPv(1,kk,oo,qq)-...                                                   
+                                                    (MAC.VOPv(1,kk,oo,qq)-MAC.VOPv(1,kkk,oo,qq))*...
+                                                    (MAC.VOPv(2,kk,oo,qq)-YInt)/(MAC.VOPv(2,kk,oo,qq)-MAC.VOPv(2,kkk,oo,qq));
+                                                if XInt2 <= XInt %crossing a segment
+                                                    InOut = InOut+1;
+                                                end
+                                            end
+                                        %end
+                                    end
+                                    if mod(InOut,2) ~= 0 %odd = inside (directly) forget about it, no need to test the point with other jj
+                                        forget = 1;
+                                        break; %break the qq, stopping qq loop number of escape route in every avoplane, regardless the obstacle
+                                    else
+                                        forget = 0;
+                                    end
+                               end
+                            end
+                            if forget == 0 %does not included in any
+                               MAC.VOPvInt(1,rr,oo) = XInt;
+                               MAC.VOPvInt(2,rr,oo) = YInt;
+                               MAC.VOPvInt(3,rr,oo) = MAC.VelBo(1);
+                               if abs(XInt) ~= 0
+                                   MAC.VOPvInt(4,rr,oo) = atan2(YInt,XInt); %Polar angle
+                               else
+                                   MAC.VOPvInt(4,rr,oo) = sign(YInt)*pi/2;
+                               end
+                               %reverse the rolltation?
+                               %RotVirRoll =[1 0 0; 
+                               %             0 cos(MAC.VOpVee(oo)) sin(MAC.VOpVee(oo));
+                               %             0 -sin(MAC.VOpVee(oo)) cos(MAC.VOpVee(oo))];                              
+                               MAC.VOPvInt(5,rr,oo) = XInt+0*YInt+0;
+                               MAC.VOPvInt(6,rr,oo) = 0*XInt+cos(-MAC.VOpVee(oo))*YInt+0;
+                               MAC.VOPvInt(7,rr,oo) = 0*XInt-sin(-MAC.VOpVee(oo))*YInt+0;
+                               rr = rr+1;
+                            end
+                        else
+                            MAC.VOpEscOp(ll,oo,ii) = 0; 
+                        end 
+                    end
+                end 
+                MAC.VOPvIntNum(oo) = rr -1;
+            end
+        
+            chch =0; 
+            if chch > 0 
+                %figure(20)
+                coco = 'bmckbmckbmck';
+                for oo = 1:12
+                    figure(20+oo)
+                    for ii = 1:MAC.NumObs
+                        plot(MAC.VOPv(1,1:MAC.VOpNum(oo,ii),oo,ii),MAC.VOPv(2,1:MAC.VOpNum(oo,ii),oo,ii),['-d' coco(ii)]); grid on; axis equal; hold on;
+                        %for nn = 1:MAC.VOpNumInt(oo,ii)
+                        %    plot(MAC.VOPv(1,MAC.VOpInt(nn,oo,ii),oo,ii),MAC.VOPv(2,MAC.VOpInt(nn,oo,ii),oo,ii),'*r')
+                        %end
+                        xcirc = 0:0.01:MAC.VelBo(1);
+                        ycirc = (MAC.VelBo(1)^2-xcirc.^2).^0.5;
+                        plot(xcirc,ycirc,'r'); plot(xcirc,-ycirc,'r');
+                        plot(MAC.VOPv(1,1,oo,ii),MAC.VOPv(2,1,oo,ii),'dr','MarkerFaceColor','b');
+                        %[min(MAC.VOPv(1,:,oo,ii)) abs(max(MAC.VOPv(1,:,oo,ii))) 2*min(MAC.VOPv(2,:,oo,ii)) 2*max(MAC.VOPv(2,:,oo,ii))]
+                        %axis([min(MAC.VOPv(1,:,oo,ii)) abs(max(MAC.VOPv(1,:,oo,ii))) 2*min(MAC.VOPv(2,:,oo,ii)) abs(2*max(MAC.VOPv(2,:,oo,ii)))])
+                        axis([0 3 -1 1])
+                        title(['AvoPlane : ' num2str(round(MAC.VOpVee(oo)*57.3))  '^o ' ])
+                    
+                    end
+                    plot(MAC.VOPvInt(1,:,oo),MAC.VOPvInt(2,:,oo),'ok','MarkerSize',10)
+                    plot(MAC.VOPvIntAll(1,:,oo),MAC.VOPvIntAll(2,:,oo),'+g','MarkerSize',5)
+                    %for jj = 1:MAC.VOpIntNumUn(oo)
+                    %    plot([0 MAC.VOpIntUn(1,jj,oo)],[0 MAC.VOpIntUn(2,jj,oo)],'--g','linewidth',1)
+                    %end
                 end
                 stopppp
                 
