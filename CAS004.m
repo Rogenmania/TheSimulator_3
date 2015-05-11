@@ -181,18 +181,61 @@ classdef CAS004< Computer
                    %then dont change the speed nor the AvoPlane before it
                    %become not imminent.
                    
-               case 2 %, go to closest CCW
-                   
-               case 3 %go to the closest, either CW/CCW
+               case 2 %, same, but changing AVoPlane
+                   for oo = 1:length(MAC.VOpVee)
+                       for ii = 1:MAC.VOPvIntNum(oo)
+                           if MAC.VOPvInt(4,ii,oo) >= 0
+                               if MAC.VOPvInt(4,ii,oo) < AngAvoPl
+                                   VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,oo); MAC.VOPvInt(6,ii,oo); MAC.VOPvInt(7,ii,oo)];
+                                   AngAvoPl = MAC.VOPvInt(4,ii,oo);
+                                   SelAvoPl = oo;
+                               end
+                           end
+                       end
+                   end
+
+               case 3 %same with 1, but not retrtricted to right turn
+                   if MAC.Interupt == 0
+                       for oo = 1:length(MAC.VOpVee)
+                           for ii = 1:MAC.VOPvIntNum(oo)
+                               if abs(MAC.VOPvInt(4,ii,oo)) < abs(AngAvoPl)
+                                   VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,oo); MAC.VOPvInt(6,ii,oo); MAC.VOPvInt(7,ii,oo)];
+                                   AngAvoPl = MAC.VOPvInt(4,ii,oo);
+                                   SelAvoPl = oo;
+                                   ergvwsv
+                               end
+                           end
+                       end
+                   else
+                       %on the SelAvoPl, MAC.Decision(5)
+                       for ii = 1:MAC.VOPvIntNum(MAC.Decision(5))
+                           if abs(MAC.VOPvInt(4,ii,MAC.Decision(5))) < abs(AngAvoPl)
+                               VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,MAC.Decision(5)); MAC.VOPvInt(6,ii,MAC.Decision(5)); MAC.VOPvInt(7,ii,MAC.Decision(5))];
+                               AngAvoPl = MAC.VOPvInt(4,ii,MAC.Decision(5));
+                               SelAvoPl = MAC.Decision(5);
+                           end
+                       end
+                       
+                   end
                    
                case 4 %go to the closest acc or dcc
-                   
+                   for oo = 1:length(MAC.VOpVee)
+                       for ii = 1:MAC.VOPvIntNum(oo)
+                           if abs(MAC.VOPvInt(4,ii,oo)) < abs(AngAvoPl)
+                               VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,oo); MAC.VOPvInt(6,ii,oo); MAC.VOPvInt(7,ii,oo)];
+                               AngAvoPl = MAC.VOPvInt(4,ii,oo);
+                               SelAvoPl = oo;
+                           end
+                       end
+                   end
                case 5 %go to the closest off all (need to define energy)
                    
                otherwise
                    
            end
-           
+           if isreal(VelAvo(1)) == 0 || isreal(VelAvo(2)) == 0 || isreal(VelAvo(3)) == 0
+               VelAvo = MAC.VelGlo; %removing the threat of imajiner solution to the UAV
+           end
            %interupron --> calculation canbe done after interuption to be
            %more efficient. But for the research, better calculate all time
            if MAC.CASFlag(5,1)  >= 1  %there are one that are imminent AND inside VO (DIV?)
@@ -380,7 +423,7 @@ classdef CAS004< Computer
                         VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
                         
                         if isreal(VOBpVee(:,pp)) == 0 
-                           sdgvsdv
+                           disp('sdgvsdv')
                         end
                     end
 
@@ -673,7 +716,6 @@ classdef CAS004< Computer
                     
                     for pp = 1:length(MAC.TiVOBp)
                         VOBpVee(:,pp) =RotVirRoll*MAC.VOBp(:,pp,ii);
-                        
                         if isreal(VOBpVee(:,pp)) == 0 
                            sdgvsdv
                         end
@@ -811,7 +853,7 @@ classdef CAS004< Computer
                         else
                             lll = ll+1;
                         end
-                        if (MAC.VOPv(3,ll,oo,ii)-MAC.VelBo(1))*(MAC.VOPv(3,lll,oo,ii)-MAC.VelBo(1)) <= 0
+                        if (MAC.VOPv(3,ll,oo,ii)-MAC.VelBo(1))*(MAC.VOPv(3,lll,oo,ii)-MAC.VelBo(1)) < 0
                             %for visualizations
                             MAC.VOpInt(mm,oo,ii) = ll; %recorded ll is the index of escape route of VOPv
                             MAC.VOpInt(mm+1,oo,ii) = lll;
@@ -858,8 +900,8 @@ classdef CAS004< Computer
                                 MAC.VOPvIntAll(2,ss,oo) = YInt;
                                 MAC.VOPvIntAll(1,ss,oo) = XInt;
                                 ss = ss+1;
+
                             end
-                            
                             for qq = 1:MAC.NumObs
                                if qq~=ii %not testing with its own polygon
                                   InOut = 0;
