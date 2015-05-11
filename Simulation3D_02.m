@@ -299,13 +299,8 @@ while ElaTi < TimeEnd
 end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
-save Record RecXYZ_g 
-save Record2 RecUVW_g
-save Record3 RecVTP_g
-save Record4 RecODist RecOFlag AgentNumber Rsep
-save RecordVO RecVOpVe 
-save RecordVO2 RecVOpVe2 
-save RecordVO3 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
+save Record RecXYZ_g RecUVW_g RecVTP_g RecODist RecOFlag AgentNumber Rsep
+save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%
