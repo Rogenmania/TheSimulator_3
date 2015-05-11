@@ -167,7 +167,7 @@ GoalvPath = 0.01;
 
 ATurnRate = 10/180*pi;
 
-VOpPo = 0:2*pi/144:2*pi; 
+VOpPo = 0:2*pi/72:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
 
 for tii = 1:AgentNumber
