@@ -9,7 +9,7 @@ clear all; clc; close all;
 %%
 %Making the world.... making the object==================================
 AgentNumber = 8;
-tSimTiR = 12; %Recording Alocation
+tSimTiR = 15; %Recording Alocation
 tTiStR = 0.2; %Recording Save
 VOpPoints = zeros(60000,1);
 VOpPoints2 = zeros(10000,1);

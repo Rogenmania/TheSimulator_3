@@ -134,7 +134,7 @@ classdef CAS004< Computer
            switch MAC.DecMode
                case 0
                    MAC.Decision(:,1) = [MAC.VelGlo; [AngAvoPl; 0; 0]];
-               case 1 %default, go to closest CW (as in RoW), turn only, one avoplane until restore
+               case 1 %default, go to closest CW (as in RoW)
                    %MAC.CASFlag % imminence and inclusion. also which zone, but probably not used here.
                    %MAC.TiVOBp  % points on BVO
                    %MAC.VOpVee  % considered avoidance planes
@@ -174,18 +174,15 @@ classdef CAS004< Computer
                        end
                        
                    end
-               case 2 %, always looking for better AvoPlane. Turn only
-                   for oo = 1:length(MAC.VOpVee)
-                       for ii = 1:MAC.VOPvIntNum(oo)
-                           if MAC.VOPvInt(4,ii,oo) >= 0
-                               if MAC.VOPvInt(4,ii,oo) < AngAvoPl
-                                   VelAvo = MAC.MatB2E*[MAC.VOPvInt(5,ii,oo); MAC.VOPvInt(6,ii,oo); MAC.VOPvInt(7,ii,oo)];
-                                   AngAvoPl = MAC.VOPvInt(4,ii,oo);
-                                   SelAvoPl = oo;
-                               end
-                           end
-                       end
-                   end
+                   
+                   
+                   
+                   %MAC.Decision(:,1) = [VelAvo; [AngAvoPl; 0; 0]]; % its already global velocity
+                   %then dont change the speed nor the AvoPlane before it
+                   %become not imminent.
+                   
+               case 2 %, go to closest CCW
+                   
                case 3 %go to the closest, either CW/CCW
                    
                case 4 %go to the closest acc or dcc

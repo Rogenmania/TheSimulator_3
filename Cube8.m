@@ -26,7 +26,7 @@ end
 XYZsta_g = XYZ_g - UVW_g*Tifin/1000;
 XYZfin_g = XYZ_g + UVW_g*Tifin;
 
-DecMode = ones(AgentNumber,1)*2;
+DecMode = ones(AgentNumber,1);
 ADist = ones(AgentNumber,1)*10;
 
 
