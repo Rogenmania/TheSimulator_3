@@ -52,7 +52,7 @@ ForTrckY = zeros(1,DatNum);
 ForTrckZ = zeros(1,DatNum);
 
 for tii = 1:AgentNumber
-    TrackLine(tii) = line(XYZ_g(tii,1,1), XYZ_g(tii,2,1), XYZ_g(tii,3,1),'LineStyle','--','Color','k','linewidth',1.5);
+    TrackLine(tii) = line(XYZ_g(tii,1,1), XYZ_g(tii,2,1), XYZ_g(tii,3,1),'LineStyle','--','Color',ColSet(tii),'linewidth',1.5);
     
     vAge(tii) = surf(XAge+XYZ_g(tii,1,1), YAge+XYZ_g(tii,2,1), ZAge+XYZ_g(tii,3,1),...  %the XYZ_g is just for initial
                 'FaceColor','k','FaceAlpha',0.2,'EdgeColor',ColSet(tii),'EdgeAlpha',0.5); %making agent sphere
@@ -177,6 +177,7 @@ for aa = 1:AgentNumber
         subplot(AgentNumber,1,aa)
         plot(Dista((aa-1)*(AgentNumber-1)+bb,:)',ColPlo(bb)); grid on; hold on;
         if aa == 1 && bb==1;    title('Distance Between'); end
+        axis([0 80 0 1])
         
         figure(17)
         subplot(AgentNumber,1,aa)

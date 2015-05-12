@@ -74,6 +74,7 @@ classdef CAS004< Computer
         RelVelAbs   %[NEW]
         RelVelBodTG
         
+        VORadC = zeros(50,1) 
         VORad = zeros(50,1)
         VODis = zeros(50,1)
         VOBAng = zeros(50,1)
@@ -93,7 +94,12 @@ classdef CAS004< Computer
         VOpEscOp
         VOPvIntAll %the intersection -- the solution
         VOPvInt
+        VOPvInt2
         VOPvIntNum
+        VOPvIntNum2
+        ImmiObs %only calculate VO if Immi
+        InVOObs %only find sol if inVO
+        
         
         DecMode
         DecFiAvoPl
@@ -116,9 +122,6 @@ classdef CAS004< Computer
             %whole computations
            ObsStateCalc(MAC); %obstacles states!! also the number of detected obstacle
            CheckDistance(MAC); %first Check the Distance. further, VO not calculated. ObsCats  and  CASFlag
-                 %actually dont need to calculate VOP if is not imminent, or if
-                 %it is not inside VO. but we just try to calculate all.
-                 %Only not avoid
            VelocityObstacle3D(MAC); %Check threats, well this make the ACAS calculating all the time....      
            %VOAvoPlaneTest(MAC);
            VOAvoPlane2(MAC);
@@ -324,7 +327,8 @@ classdef CAS004< Computer
              for ii = 1:MAC.NumObs
                 %lets follow the paper
                 %The VO-cone properties
-                MAC.VORad(ii) = 1.1*MAC.SepRad(4,ii)*(MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)^0.5/MAC.ObDist(ii);
+                MAC.VORadC(ii) = 2*MAC.SepRad(4,ii)*(MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)^0.5/MAC.ObDist(ii);
+                MAC.VORad(ii) = MAC.VORadC(ii)*(1+(tan(pi/(length(MAC.TiVOBp))))^2)^0.5;
                 MAC.VODis(ii) = (MAC.ObDist(ii)^2-MAC.SepRad(4,ii)^2)/MAC.ObDist(ii); %fourth SepRad, since we are working in EscapeSphr
                 if abs(MAC.VODis(ii)) > 0
                     MAC.VOBAng(ii) = atan2(MAC.VORad(ii),MAC.VODis(ii));
@@ -360,7 +364,6 @@ classdef CAS004< Computer
                 else
                   MAC.CASFlag(4,ii+1) = 0; 
                 end
-                
                 %turning the RelVels so the Vi is on XY?
                 
                 MAC.VOVRel2(:,ii) = MAC.RotMat(MAC.ObVelABod(:,ii),-3)*MAC.RelVelBod(:,ii);
@@ -415,8 +418,6 @@ classdef CAS004< Computer
                         VOTgVee = RotVirRoll*MAC.MatE2B*MAC.TGoVel; %the togoal on Avoplane
                         MAC.VOPv2(1,oo) = VOTgVee(1);
                         MAC.VOPv2(2,oo) = VOTgVee(2);
-                        Bb = VOTgVee(1);
-                        Cc = VOTgVee(2);
                     end
                     
                     for pp = 1:length(MAC.TiVOBp)
@@ -840,7 +841,10 @@ classdef CAS004< Computer
                 mm = 1; %index the two point of segemnt solution on oo
                 rr = 1; %index number of solution on oo that is not included
                 ss = 1; %index number of solution on oo
+                uu = 1; %index number of solution on oo that is inVO and Immi
+                forget = 1;
                 for ii = 1:MAC.NumObs
+                    if MAC.CASFlag(1,ii+1) == 1 && MAC.CASFlag(3,ii+1) == 1 %imminent and inside VO 
                     for ll = 1:MAC.VOpNum(oo,ii) 
                         %a search for two points closest to
                         %intersection (R ~ Vo). Two ways, pos and neg The
@@ -904,32 +908,34 @@ classdef CAS004< Computer
                             end
                             for qq = 1:MAC.NumObs
                                if qq~=ii %not testing with its own polygon
-                                  InOut = 0;
-                                    for kk = 1:MAC.VOpNum(oo,qq)
-                                        %if MAC.VOpNum(oo,qq) <= MAC.VelBo(1) %just to be efficient
-                                            if kk == MAC.VOpNum(oo,qq) %last point
-                                                kkk = 1;
-                                            else
-                                                kkk = kk+1;
-                                            end
-                                            if (MAC.VOPv(2,kk,oo,qq)-YInt)*...
-                                                    (MAC.VOPv(2,kkk,oo,qq)-YInt) <= 0 
-                                                %eq => (y1-y)/(y1-y2) = (x1-x)/(x1-x2)
-                                                XInt2=MAC.VOPv(1,kk,oo,qq)-...                                                   
-                                                    (MAC.VOPv(1,kk,oo,qq)-MAC.VOPv(1,kkk,oo,qq))*...
-                                                    (MAC.VOPv(2,kk,oo,qq)-YInt)/(MAC.VOPv(2,kk,oo,qq)-MAC.VOPv(2,kkk,oo,qq));
-                                                if XInt2 <= XInt %crossing a segment
-                                                    InOut = InOut+1;
-                                                end
-                                            end
-                                        %end
-                                    end
-                                    if mod(InOut,2) ~= 0 %odd = inside (directly) forget about it, no need to test the point with other jj
-                                        forget = 1;
-                                        break; %break the qq, stopping qq loop number of escape route in every avoplane, regardless the obstacle
-                                    else
-                                        forget = 0;
-                                    end
+                                   if MAC.CASFlag(1,qq+1) == 1 && MAC.CASFlag(3,qq+1) == 1
+                                       InOut = 0;
+                                       for kk = 1:MAC.VOpNum(oo,qq)
+                                           %if MAC.VOpNum(oo,qq) <= MAC.VelBo(1) %just to be efficient
+                                           if kk == MAC.VOpNum(oo,qq) %last point
+                                               kkk = 1;
+                                           else
+                                               kkk = kk+1;
+                                           end
+                                           if (MAC.VOPv(2,kk,oo,qq)-YInt)*...
+                                                   (MAC.VOPv(2,kkk,oo,qq)-YInt) <= 0 
+                                               %eq => (y1-y)/(y1-y2) = (x1-x)/(x1-x2)
+                                               XInt2=MAC.VOPv(1,kk,oo,qq)-...                                                   
+                                                   (MAC.VOPv(1,kk,oo,qq)-MAC.VOPv(1,kkk,oo,qq))*...
+                                                   (MAC.VOPv(2,kk,oo,qq)-YInt)/(MAC.VOPv(2,kk,oo,qq)-MAC.VOPv(2,kkk,oo,qq));
+                                               if XInt2 <= XInt %crossing a segment
+                                                   InOut = InOut+1;
+                                               end
+                                           end
+                                           %end
+                                       end
+                                       if mod(InOut,2) ~= 0 %odd = inside (directly) forget about it, no need to test the point with other jj
+                                           forget = 1;
+                                           break; %break the qq, stopping qq loop number of escape route in every avoplane, regardless the obstacle
+                                       else
+                                           forget = 0;
+                                       end
+                                   end
                                end
                             end
                             if forget == 0 %does not included in any
@@ -954,8 +960,10 @@ classdef CAS004< Computer
                             MAC.VOpEscOp(ll,oo,ii) = 0; 
                         end 
                     end
+                    end
                 end 
                 MAC.VOPvIntNum(oo) = rr -1;
+                MAC.VOPvIntNum2(oo) = uu -1;
             end
         
             chch =0; 

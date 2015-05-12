@@ -167,7 +167,7 @@ GoalvPath = 0.01;
 
 ATurnRate = 10/180*pi;
 
-VOpPo = 0:2*pi/72:2*pi; 
+VOpPo = 0:2*pi/36:2*pi; 
 VOpVee = -pi/2:pi/12:pi/2;
 
 for tii = 1:AgentNumber
@@ -258,31 +258,31 @@ while ElaTi < TimeEnd
         dd = 1;
         ee = 1;
         %saving private ryan
-        for bb = 1:length(VOpVee) %many avo pl
-            VOpPoints2(ee) = CAS(ii).VOPv2(1,bb);
-            VOpPoints2(ee+1) = CAS(ii).VOPv2(2,bb);
-            ee = ee+2;
-           for aa = 1:AgentNumber-1
-               %VOpEscPo(ff) = CAS(ii).VOpIntNumUn(12,smething,oo);
-               %ff = ff+1;
-               VOpPoints2(ee) = CAS(ii).VOPv2(2*aa+1,bb);
-               Aaa = CAS(ii).VOPv2(2*aa+1,bb);
-               VOpPoints2(ee+1) = CAS(ii).VOPv2(2*aa+2,bb);
-               Bbb = CAS(ii).VOPv2(2*aa+2,bb);
-               ee = ee+2;
-              for cc = 1:length(VOpPo) %many point
-                  VOpPoints(dd) = CAS(ii).VOPv(1,cc,bb,aa);
-                  VOpPoints(dd+1) = CAS(ii).VOPv(2,cc,bb,aa);
-                  VOpPoints(dd+2) = CAS(ii).VOpNum(bb,aa);
-                  VOpPoints(dd+3) = CAS(ii).VOpEscOp(cc,bb,aa);
-                  dd = dd+4;
-              end
-           end
-        end
-        disp('hahahaha')
-        RecVOpVe(ii).AddRecord(VOpPoints);
-        RecVOpVe2(ii).AddRecord(VOpPoints2);
-        RecVOpEscOp(ii).AddRecord(VOpEscPoints);
+%         for bb = 1:length(VOpVee) %many avo pl
+%             VOpPoints2(ee) = CAS(ii).VOPv2(1,bb);
+%             VOpPoints2(ee+1) = CAS(ii).VOPv2(2,bb);
+%             ee = ee+2;
+%            for aa = 1:AgentNumber-1
+%                %VOpEscPo(ff) = CAS(ii).VOpIntNumUn(12,smething,oo);
+%                %ff = ff+1;
+%                VOpPoints2(ee) = CAS(ii).VOPv2(2*aa+1,bb);
+%                Aaa = CAS(ii).VOPv2(2*aa+1,bb);
+%                VOpPoints2(ee+1) = CAS(ii).VOPv2(2*aa+2,bb);
+%                Bbb = CAS(ii).VOPv2(2*aa+2,bb);
+%                ee = ee+2;
+%               for cc = 1:length(VOpPo) %many point
+%                   VOpPoints(dd) = CAS(ii).VOPv(1,cc,bb,aa);
+%                   VOpPoints(dd+1) = CAS(ii).VOPv(2,cc,bb,aa);
+%                   VOpPoints(dd+2) = CAS(ii).VOpNum(bb,aa);
+%                   VOpPoints(dd+3) = CAS(ii).VOpEscOp(cc,bb,aa);
+%                   dd = dd+4;
+%               end
+%            end
+%         end
+%         disp('hahahaha')
+%         RecVOpVe(ii).AddRecord(VOpPoints);
+%         RecVOpVe2(ii).AddRecord(VOpPoints2);
+%         RecVOpEscOp(ii).AddRecord(VOpEscPoints);
         end
 
         if ii == 2
@@ -300,7 +300,7 @@ end
 
 EndDist = CAS(1).ObDist(1:AgentNumber-1,1);
 save Record RecXYZ_g RecUVW_g RecVTP_g RecODist RecOFlag AgentNumber Rsep
-save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
+%save RecordVO RecVOpVe RecVOpVe2 RecVOpEscOp VOpVee VOpPo AgentNumber Rsep
 clear all;
 %=====================================================================
 %%
